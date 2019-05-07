@@ -3,7 +3,6 @@
   "description": "Minimalist data mapper built on PicoDb",
   "type": "library",
   "license": "MIT",
-  "version": "0.1.0",
   "require": {
     "php": ">=7.0",
     "elvanto/picodb": "^1.0"
