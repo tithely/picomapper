@@ -2,6 +2,7 @@
 
 namespace PicoMapper;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use PicoDb\Database;
 
 class MappingTest extends \PHPUnit\Framework\TestCase
@@ -11,9 +12,17 @@ class MappingTest extends \PHPUnit\Framework\TestCase
      */
     private $db;
 
+    /**
+     * @var callable|MockObject
+     */
+    private $hook;
+
     public function setUp()
     {
         $this->db = new Database(['driver' => 'sqlite', 'filename' => ':memory:']);
+        $this->hook = $this->getMockBuilder(\stdClass::class)
+            ->setMethods(['__invoke'])
+            ->getMock();
 
         $seed = file_get_contents(__DIR__ . '/Fixtures.sql');
         $queries = explode(';', $seed);
@@ -26,6 +35,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
     public function tearDown()
     {
         $this->db = null;
+        $this->hook = null;
     }
 
     public function testFindAll()
@@ -84,6 +94,16 @@ class MappingTest extends \PHPUnit\Framework\TestCase
             ]
         ];
 
+        $this
+            ->hook
+            ->expects($this->once())
+            ->method('__invoke')
+            ->with(
+                $this->equalTo('customers'),
+                $this->equalTo(['id' => 3]),
+                $this->equalTo($customer)
+            );
+
         $this->getMapping()->insert($customer);
 
         $saved = $this->getMapping()->eq('id', 3)->findOne();
@@ -101,11 +121,24 @@ class MappingTest extends \PHPUnit\Framework\TestCase
     public function testUpdate()
     {
         $customer = $this->getMapping()->eq('id', 1)->findOne();
+        $original = $customer;
+
         $customer['orders'][0]['items'][1]['description'] = 'Jumbo Eggs';
         $customer['orders'][0]['items'][] = ['id' => 7, 'description' => 'Cheese', 'amount' => 300];
 
         unset($customer['orders'][0]['items'][0]);
         unset($customer['orders'][1]);
+
+        $this
+            ->hook
+            ->expects($this->once())
+            ->method('__invoke')
+            ->with(
+                $this->equalTo('customers'),
+                $this->equalTo(['id' => 1]),
+                $this->equalTo($customer),
+                $this->equalTo($original)
+            );
 
         $this->getMapping()->update($customer);
 
@@ -122,6 +155,15 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
     public function testRemove()
     {
+        $this
+            ->hook
+            ->expects($this->once())
+            ->method('__invoke')
+            ->with(
+                $this->equalTo('customers'),
+                $this->equalTo(['id' => 1])
+            );
+
         $this->getMapping()->eq('id', 1)->remove();
 
         $removed = $this->getMapping()->eq('id', 1)->findOne();
@@ -210,7 +252,11 @@ class MappingTest extends \PHPUnit\Framework\TestCase
             ->withColumns('id', 'name')
             ->withMany($order, 'orders', 'customer_id');
 
-        return new Mapping($this->db, $customer);
+        return new Mapping($this->db, $customer, [], [
+            'inserted' => [$this->hook],
+            'updated' => [$this->hook],
+            'removed' => [$this->hook]
+        ]);
     }
 
     /**

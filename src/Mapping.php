@@ -18,6 +18,11 @@ class Mapping extends Table
     protected $columns = [];
 
     /**
+     * @var callable[]
+     */
+    protected $hooks = [];
+
+    /**
      * @var int|null
      */
     protected $lastId;
@@ -28,11 +33,14 @@ class Mapping extends Table
      * @param Database   $db
      * @param Definition $definition
      * @param array      $columns
+     * @param callable[] $hooks
      */
-    public function __construct(Database $db, Definition $definition, array $columns = [])
+    public function __construct(Database $db, Definition $definition, array $columns = [], array $hooks = [])
     {
         $this->definition = $definition;
         $this->columns = $columns;
+        $this->hooks = $hooks;
+
         parent::__construct($db, $definition->getTable());
     }
 
@@ -100,6 +108,10 @@ class Mapping extends Table
             return false;
         }
 
+        $this->dispatch('inserted', $data, [
+            $data
+        ]);
+
         if ($this->definition->isAutoIncrement()) {
             $this->lastId = $this->db->getLastId();
             $data[$this->definition->getPrimaryKey()[0]] = $this->lastId;
@@ -164,6 +176,11 @@ class Mapping extends Table
             $deleteIds = $this->replace($data, $original);
             $this->delete($deleteIds);
 
+            $this->dispatch('updated', $data, [
+                $data,
+                $original
+            ]);
+
             return true;
         } catch (\Exception $e) {
             return false;
@@ -207,7 +224,13 @@ class Mapping extends Table
         }
 
         try {
-            return $this->delete($ids);
+            $this->delete($ids);
+
+            foreach ($data as $item) {
+                $this->dispatch('removed', $item);
+            }
+
+            return true;
         } catch (\Exception $exception) {
             return false;
         }
@@ -490,5 +513,33 @@ class Mapping extends Table
         }
 
         return $columns;
+    }
+
+    /**
+     * Dispatches an event to registered hooks.
+     *
+     * @param string $event
+     * @param array  $data
+     * @param array  $args
+     */
+    private function dispatch(string $event, array $data, $args = [])
+    {
+        if (empty($this->hooks[$event])) {
+            return;
+        }
+
+        // Add primary keys to arguments
+        array_unshift(
+            $args,
+            array_intersect_key($data, array_flip($this->definition->getPrimaryKey()))
+        );
+
+        // Add table to arguments
+        array_unshift($args, $this->definition->getTable());
+
+        // Call all registered hooks
+        foreach ($this->hooks[$event] as $hook) {
+            call_user_func_array($hook, $args);
+        }
     }
 }

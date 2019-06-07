@@ -13,6 +13,11 @@ class Mapper
     private $db;
 
     /**
+     * @var array
+     */
+    private $hooks = [];
+
+    /**
      * Mapper constructor.
      *
      * @param Database $db
@@ -30,7 +35,7 @@ class Mapper
      */
     public function mapping(Definition $definition)
     {
-        return new Mapping($this->db, $definition);
+        return new Mapping($this->db, $definition, [], $this->hooks);
     }
 
     /**
@@ -72,5 +77,16 @@ class Mapper
     public function getLogMessages()
     {
         return $this->db->getLogMessages();
+    }
+
+    /**
+     * Registers a new hook.
+     *
+     * @param string   $event
+     * @param callable $hook
+     */
+    public function hook(string $event, callable $hook)
+    {
+        $this->hooks[$event][] = $hook;
     }
 }
