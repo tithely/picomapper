@@ -124,7 +124,7 @@ Hooks are callbacks that can be triggered when a mapping performs the successful
 A hook registered against a mapper will be used for all top level mappings it creates.
 
 ```php
-$mapper->registerHook('update', function ($table, $key, $updated, $original) {
+$mapper->registerHook('updated', function ($table, $key, $updated, $original) {
     printf('Table %s (ID: %s) was updated...', $table, implode(':', $key));
 });
 ```
