@@ -85,7 +85,7 @@ class Mapper
      * @param string   $event
      * @param callable $hook
      */
-    public function hook(string $event, callable $hook)
+    public function registerHook(string $event, callable $hook)
     {
         $this->hooks[$event][] = $hook;
     }

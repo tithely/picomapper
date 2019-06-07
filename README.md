@@ -118,5 +118,16 @@ $saved = $mapper->eq('id', 'abc123')->findOne();
 // $saved will be identical in structure to post
 ```
 
+#### Hooks
+
+Hooks are callbacks that can be triggered when a mapping performs the successful insert, update or removal of a record.
+A hook registered against a mapper will be used for all top level mappings it creates.
+
+```php
+$mapper->registerHook('update', function ($table, $key, $updated, $original) {
+    printf('Table %s (ID: %s) was updated...', $table, implode(':', $key));
+});
+```
+
 #### Known Issues
 * One-to-one mappings where the relationship is associated via primary key do not work as intended
