@@ -402,6 +402,10 @@ class Mapping extends Table
             $values = $data[$property->getName()] ?? [];
 
             if (!$property->isCollection()) {
+                if (empty($values)) {
+                    continue;
+                }
+
                 $values = [$values];
             }
 

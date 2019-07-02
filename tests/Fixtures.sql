@@ -8,6 +8,9 @@ CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, date_created T
 DROP TABLE IF EXISTS items;
 CREATE TABLE items (id INTEGER PRIMARY KEY, order_id INTEGER, description TEXT, amount INTEGER, modified TEXT);
 
+DROP TABLE IF EXISTS discounts;
+CREATE TABLE discounts (id INTEGER PRIMARY KEY, order_id INTEGER, description TEXT, amount INTEGER);
+
 -- Seed database
 INSERT INTO customers (id, name) VALUES
 (1, 'John Doe'),
@@ -25,3 +28,6 @@ INSERT INTO items (id, order_id, description, amount) VALUES
 (4, 2, 'Bread', 120),
 (5, 2, 'Yogurt', 400),
 (6, 3, 'Apple', 100);
+
+INSERT INTO discounts (id, order_id, description, amount) VALUES
+(1, 2, '$10', 10);
