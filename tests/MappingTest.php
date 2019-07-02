@@ -52,6 +52,8 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('Jane Doe', $customers[1]['name']);
         $this->assertCount(1, $customers[1]['orders']);
         $this->assertCount(2, $customers[1]['orders'][0]['items']);
+        $this->assertEquals('$10', $customers[1]['orders'][0]['discount']['description']);
+        $this->assertEquals(10, $customers[1]['orders'][0]['discount']['amount']);
     }
 
     public function testFindOne()
@@ -78,6 +80,10 @@ class MappingTest extends \PHPUnit\Framework\TestCase
                 [
                     'id' => 4,
                     'date_created' => '2018-02-01',
+                    'discount' => [
+                        'description' => 'Dessert Discount',
+                        'amount' => 20
+                    ],
                     'items' => [
                         [
                             'id' => 7,
@@ -110,6 +116,8 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('Dave Matthews', $saved['name']);
         $this->assertCount(1, $saved['orders']);
         $this->assertCount(2, $saved['orders'][0]['items']);
+        $this->assertEquals('Dessert Discount', $saved['orders'][0]['discount']['description']);
+        $this->assertEquals(20, $saved['orders'][0]['discount']['amount']);
 
         $this->assertEquals('2018-02-01', $saved['orders'][0]['date_created']);
         $this->assertEquals('Ice Cream', $saved['orders'][0]['items'][0]['description']);
@@ -143,7 +151,6 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->getMapping()->update($customer);
 
         $saved = $this->getMapping()->eq('id', 1)->findOne();
-        $this->assertCount(1, $saved['orders']);
         $this->assertCount(3, $saved['orders'][0]['items']);
         $this->assertEquals(2, $saved['orders'][0]['items'][0]['id']);
         $this->assertEquals('Jumbo Eggs', $saved['orders'][0]['items'][0]['description']);
@@ -239,12 +246,17 @@ class MappingTest extends \PHPUnit\Framework\TestCase
      */
     public function getMapping()
     {
+        $discount = (new Definition('discounts'))
+            ->withColumns('description', 'amount')
+            ->useAutoIncrement();
+
         $item = (new Definition('items'))
             ->withColumns('id', 'description', 'amount', 'modified')
             ->withModificationData(['modified' => '2019-01-02 03:04:05']);
 
         $order = (new Definition('orders'))
             ->withColumns('id', 'date_created')
+            ->withOne($discount, 'discount', 'order_id')
             ->withMany($item, 'items', 'order_id')
             ->withDeletionTimestamp('date_deleted');
 
