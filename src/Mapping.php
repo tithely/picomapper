@@ -314,6 +314,12 @@ class Mapping extends Table
                 if (!$property->getJoinTable()) {
                     $item[$property->getForeignColumn()] = $data[$property->getLocalColumn()];
                 }
+
+                if (!$property->isCollection()) {
+                    $deleteIds = $mapping->replace($item, reset($propertyOriginal), $deleteIds);
+                    continue;
+                }
+
                 $originalItem = Collection::first($propertyOriginal, function($original) use ($item, $propertyPrimary) {
                     foreach ($propertyPrimary as $column) {
                         if ($original[$column] != $item[$column]) {
@@ -323,6 +329,7 @@ class Mapping extends Table
 
                     return true;
                 });
+
                 $deleteIds = $mapping->replace($item, $originalItem, $deleteIds);
             }
         }
