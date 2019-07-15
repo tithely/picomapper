@@ -148,6 +148,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
                 $this->equalTo($original)
             );
 
+        $this->getMapping()->update($customer);
         $saved = $this->getMapping()->eq('id', 1)->findOne();
         $this->assertCount(3, $saved['orders'][0]['items']);
         $this->assertEquals(2, $saved['orders'][0]['items'][0]['id']);
