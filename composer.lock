@@ -4,8 +4,49 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1ad51d13d618cca752634da34c9bf984",
+    "content-hash": "f15c3d8acc4d6dd53eb1f98e6eed6efc",
     "packages": [
+        {
+            "name": "elvanto/picodb",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/elvanto/picodb.git",
+                "reference": "ead8c6210e05ff21c24893c09b3d157db0a2ea78"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/elvanto/picodb/zipball/ead8c6210e05ff21c24893c09b3d157db0a2ea78",
+                "reference": "ead8c6210e05ff21c24893c09b3d157db0a2ea78",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "4.8.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "PicoDb": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Frédéric Guillot",
+                    "homepage": "https://github.com/fguillot/"
+                }
+            ],
+            "description": "Minimalist database query builder",
+            "time": "2018-07-31T01:54:56+00:00"
+        }
+    ],
+    "packages-dev": [
         {
             "name": "doctrine/instantiator",
             "version": "1.0.5",
@@ -59,45 +100,6 @@
                 "instantiate"
             ],
             "time": "2015-06-14T21:17:01+00:00"
-        },
-        {
-            "name": "elvanto/picodb",
-            "version": "1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/elvanto/picodb.git",
-                "reference": "ead8c6210e05ff21c24893c09b3d157db0a2ea78"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/elvanto/picodb/zipball/ead8c6210e05ff21c24893c09b3d157db0a2ea78",
-                "reference": "ead8c6210e05ff21c24893c09b3d157db0a2ea78",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "4.8.*"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "PicoDb": "lib/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Frédéric Guillot",
-                    "homepage": "https://github.com/fguillot/"
-                }
-            ],
-            "description": "Minimalist database query builder",
-            "time": "2018-07-31T01:54:56+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -1563,7 +1565,6 @@
             "time": "2018-12-25T11:19:39+00:00"
         }
     ],
-    "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": [],
