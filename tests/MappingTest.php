@@ -131,10 +131,6 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $customer = $this->getMapping()->eq('id', 1)->findOne();
         $original = $customer;
 
-        usort($customer['orders'][0]['items'], function ($a, $b) {
-            return $a['id'] <=> $b['id'];
-        });
-
         $customer['orders'][0]['items'][1]['description'] = 'Jumbo Eggs';
         $customer['orders'][0]['items'][] = ['id' => 7, 'description' => 'Cheese', 'amount' => 300];
 
@@ -151,10 +147,6 @@ class MappingTest extends \PHPUnit\Framework\TestCase
                 $this->equalTo($customer),
                 $this->equalTo($original)
             );
-
-        if (!$this->getMapping()->update($customer)) {
-            print_r($this->db->getLogMessages());
-        }
 
         $saved = $this->getMapping()->eq('id', 1)->findOne();
         $this->assertCount(3, $saved['orders'][0]['items']);
