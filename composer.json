@@ -5,7 +5,7 @@
   "license": "MIT",
   "require": {
     "php": ">=7.0",
-    "elvanto/picodb": "^1.0"
+    "elvanto/picodb": "^2.0"
   },
   "autoload": {
     "psr-4": {"PicoMapper\\": "src/"}
