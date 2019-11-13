@@ -99,12 +99,22 @@ class Mapping extends Table
             return true;
         }
 
+        $useTransaction = !$this->db->getConnection()->inTransaction();
+
+        if ($useTransaction) {
+            $this->db->startTransaction();
+        }
+
         if ($this->definition->isAutoIncrement()) {
             // Force the database to assign sequence numbers
             unset($base[$this->definition->getPrimaryKey()[0]]);
         }
 
         if (!parent::insert($base)) {
+            if ($useTransaction) {
+                $this->db->cancelTransaction();
+            }
+
             return false;
         }
 
@@ -138,9 +148,17 @@ class Mapping extends Table
                 $item[$property->getForeignColumn()] = $data[$property->getLocalColumn()];
 
                 if (!$mapping->insert($item)) {
+                    if ($useTransaction) {
+                        $this->db->cancelTransaction();
+                    }
+
                     return false;
                 }
             }
+        }
+
+        if ($useTransaction) {
+            $this->db->closeTransaction();
         }
 
         return true;
@@ -160,6 +178,7 @@ class Mapping extends Table
             return true;
         }
 
+
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
                 return false;
@@ -172,6 +191,12 @@ class Mapping extends Table
             return false;
         }
 
+        $useTransaction = !$this->db->getConnection()->inTransaction();
+
+        if ($useTransaction) {
+            $this->db->startTransaction();
+        }
+
         try {
             $deleteIds = $this->replace($data, $original);
             $this->delete($deleteIds);
@@ -181,8 +206,16 @@ class Mapping extends Table
                 $original
             ]);
 
+            if ($useTransaction) {
+                $this->db->closeTransaction();
+            }
+
             return true;
         } catch (\Exception $e) {
+            if ($useTransaction) {
+                $this->db->cancelTransaction();
+            }
+
             return false;
         }
     }
@@ -224,14 +257,17 @@ class Mapping extends Table
         }
 
         try {
+            $this->db->startTransaction();
             $this->delete($ids);
 
             foreach ($data as $item) {
                 $this->dispatch('removed', $item);
             }
 
+            $this->db->closeTransaction();
             return true;
         } catch (\Exception $exception) {
+            $this->db->cancelTransaction();
             return false;
         }
     }
