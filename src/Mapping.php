@@ -111,6 +111,7 @@ class Mapping extends Table
         }
 
         if (!parent::insert($base)) {
+            // Transaction already cancelled by the statement handler
             return false;
         }
 
@@ -144,6 +145,7 @@ class Mapping extends Table
                 $item[$property->getForeignColumn()] = $data[$property->getLocalColumn()];
 
                 if (!$mapping->insert($item)) {
+                    // Transaction already cancelled by the statement handler
                     return false;
                 }
             }
@@ -169,7 +171,6 @@ class Mapping extends Table
         if ($this->definition->isReadOnly()) {
             return true;
         }
-
 
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
