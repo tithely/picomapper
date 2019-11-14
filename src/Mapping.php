@@ -111,10 +111,6 @@ class Mapping extends Table
         }
 
         if (!parent::insert($base)) {
-            if ($useTransaction) {
-                $this->db->cancelTransaction();
-            }
-
             return false;
         }
 
@@ -148,10 +144,6 @@ class Mapping extends Table
                 $item[$property->getForeignColumn()] = $data[$property->getLocalColumn()];
 
                 if (!$mapping->insert($item)) {
-                    if ($useTransaction) {
-                        $this->db->cancelTransaction();
-                    }
-
                     return false;
                 }
             }
