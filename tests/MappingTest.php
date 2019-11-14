@@ -238,6 +238,53 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('Bacon', $saved['orders'][0]['items'][2]['description']);
     }
 
+    public function testInsertRollback()
+    {
+        $customer = [
+            'id' => 3,
+            'name' => 'Dave Matthews',
+            'orders' => [
+                [
+                    'id' => 4,
+                    'date_created' => '2018-02-01',
+                    'discount' => [
+                        'description' => 'Dessert Discount',
+                        'amount' => 20
+                    ],
+                    'items' => [
+                        [
+                            'id' => 7,
+                            'description' => 'Ice Cream',
+                            'amount' => 400
+                        ],
+                        [
+                            'id' => 7,
+                            'description' => 'Cookies',
+                            'amount' => '230'
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $this->getMapping()->insert($customer);
+        $inserted = $this->getMapping()->eq('id', 3)->findOne();
+
+        $this->assertNull($inserted);
+    }
+
+    public function testUpdateRollback()
+    {
+        $customer = $this->getMapping()->eq('id', 1)->findOne();
+        $original = $customer;
+
+        $customer['orders'][0]['items'][] = ['id' => '3'];
+        $this->getMapping()->update($customer);
+
+        $updated = $this->getMapping()->eq('id', 1)->findOne();
+        $this->assertEquals($original, $updated);
+    }
+
     /**
      * Returns a new mapping for testing.
      *
