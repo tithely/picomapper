@@ -115,10 +115,6 @@ class Mapping extends Table
             return false;
         }
 
-        $this->dispatch('inserted', $data, [
-            $data
-        ]);
-
         if ($this->definition->isAutoIncrement()) {
             $this->lastId = $this->db->getLastId();
             $data[$this->definition->getPrimaryKey()[0]] = $this->lastId;
@@ -154,6 +150,10 @@ class Mapping extends Table
         if ($useTransaction) {
             $this->db->closeTransaction();
         }
+
+        $this->dispatch('inserted', $data, [
+            $data
+        ]);
 
         return true;
     }
@@ -198,14 +198,14 @@ class Mapping extends Table
             $deleteIds = $this->replace($data, $original);
             $this->delete($deleteIds);
 
+            if ($useTransaction) {
+                $this->db->closeTransaction();
+            }
+
             $this->dispatch('updated', $data, [
                 $data,
                 $original
             ]);
-
-            if ($useTransaction) {
-                $this->db->closeTransaction();
-            }
 
             return true;
         } catch (\Exception $e) {
@@ -232,7 +232,11 @@ class Mapping extends Table
                 return false;
             }
 
-            $this->eq($column, $data[$column]);
+            if (is_null($data[$column])) {
+                $this->isNull($column);
+            } else {
+                $this->eq($column, $data[$column]);
+            }
         }
 
         $original = $this->findOne();
@@ -257,11 +261,12 @@ class Mapping extends Table
             $this->db->startTransaction();
             $this->delete($ids);
 
+            $this->db->closeTransaction();
+
             foreach ($data as $item) {
                 $this->dispatch('removed', $item);
             }
 
-            $this->db->closeTransaction();
             return true;
         } catch (\Exception $exception) {
             $this->db->cancelTransaction();
@@ -292,7 +297,11 @@ class Mapping extends Table
                 return $deleteIds;
             }
 
-            $query->eq($column, $data[$column]);
+            if (is_null($data[$column])) {
+                $this->isNull($column);
+            } else {
+                $this->eq($column, $data[$column]);
+            }
         }
 
         $base = $this->getBaseData($data);
