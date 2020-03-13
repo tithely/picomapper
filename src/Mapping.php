@@ -298,9 +298,9 @@ class Mapping extends Table
             }
 
             if (is_null($data[$column])) {
-                $this->isNull($column);
+                $query->isNull($column);
             } else {
-                $this->eq($column, $data[$column]);
+                $query->eq($column, $data[$column]);
             }
         }
 
