@@ -177,7 +177,11 @@ class Mapping extends Table
                 return false;
             }
 
-            $this->eq($column, $data[$column]);
+            if (is_null($data[$column])) {
+                $this->isNull($column);
+            } else {
+                $this->eq($column, $data[$column]);
+            }
         }
 
         if (!$original = $this->findOne()) {
