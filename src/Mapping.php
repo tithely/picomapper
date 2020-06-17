@@ -410,11 +410,27 @@ class Mapping extends Table
 
                     foreach ($first as $column => $value) {
                         if ($column !== $primary) {
-                            $query->eq($column, $value);
+                            if (is_null($value)) {
+                                $query->isNull($column);
+                            } else {
+                                $query->eq($column, $value);
+                            }
                         }
                     }
 
-                    $query->in($primary, array_column($group, $primary));
+                    $primaryValues = array_column($group, $primary);
+
+                    $query->beginOr();
+
+                    if (in_array(null, $primaryValues)) {
+                        $query->isNull($primary);
+                        $primaryValues = array_filter($primaryValues, function ($value) {
+                            return !is_null($value);
+                        });
+                    }
+
+                    $query->in($primary, $primaryValues);
+                    $query->closeOr();
 
                     $result = $deletion ? $query->update([$deletion => gmdate('Y-m-d H:i:s')]) : $query->remove();
                     if (!$result) {
