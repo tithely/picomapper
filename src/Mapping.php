@@ -429,7 +429,7 @@ class Mapping extends Table
                         });
                     }
 
-                    $query->in($primary, $primaryValues);
+                    $query->in($primary, array_values($primaryValues));
                     $query->closeOr();
 
                     $result = $deletion ? $query->update([$deletion => gmdate('Y-m-d H:i:s')]) : $query->remove();
