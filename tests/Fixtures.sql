@@ -11,6 +11,9 @@ CREATE TABLE items (id INTEGER PRIMARY KEY, order_id INTEGER, description TEXT, 
 DROP TABLE IF EXISTS discounts;
 CREATE TABLE discounts (id INTEGER PRIMARY KEY, order_id INTEGER, description TEXT, amount INTEGER);
 
+DROP TABLE IF EXISTS orders_fulfillments;
+CREATE TABLE orders_fulfillments (order_id INTEGER, employee_id INTEGER);
+
 -- Seed database
 INSERT INTO customers (id, name) VALUES
 (1, 'John Doe'),
