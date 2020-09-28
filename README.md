@@ -90,7 +90,7 @@ $post = [
     'author' => [
         'id' => 'zxy321',
         'name' => 'John Doe'
-    ]
+    ],
     'title' => 'Data Mappers Rock',
     'content' => 'They save you time',
     'comments' => [
@@ -112,6 +112,7 @@ $post = [
             ],
             'content' => 'Nice article!'
         ],
+    ]
 ];
 
 $mapper->save($post);
