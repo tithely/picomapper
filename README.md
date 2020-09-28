@@ -131,6 +131,3 @@ $mapper->registerHook('updated', function ($table, $key, $updated, $original) {
     printf('Table %s (ID: %s) was updated...', $table, implode(':', $key));
 });
 ```
-
-#### Known Issues
-* One-to-one mappings where the relationship is associated via primary key do not work as intended
