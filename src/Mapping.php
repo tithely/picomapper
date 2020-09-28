@@ -328,8 +328,8 @@ class Mapping extends Table
             $propertyOriginal = $original[$property->getName()] ?? [];
 
             if (!$property->isCollection()) {
-                $propertyData = [$propertyData];
-                $propertyOriginal = [$propertyOriginal];
+                $propertyData = $propertyData ? [$propertyData] : [];
+                $propertyOriginal = $propertyOriginal ? [$propertyOriginal] : [];
             }
 
             $mapping = new static($this->db, $property->getDefinition(), [$property->getForeignColumn()]);
