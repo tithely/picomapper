@@ -131,6 +131,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $customer = $this->getMapping()->eq('id', 1)->findOne();
         $original = $customer;
 
+        $customer['orders'][0]['fulfillment'] = ['employee_id' => 2];
         $customer['orders'][0]['items'][1]['description'] = 'Jumbo Eggs';
         $customer['orders'][0]['items'][] = ['id' => 7, 'description' => 'Cheese', 'amount' => 300];
 
@@ -296,13 +297,17 @@ class MappingTest extends \PHPUnit\Framework\TestCase
             ->withColumns('description', 'amount')
             ->useAutoIncrement();
 
+        $fulfillment = (new Definition('orders_fulfillments', ['order_id', 'employee_id']));
+
         $item = (new Definition('items'))
             ->withColumns('id', 'description', 'amount', 'modified')
             ->withModificationData(['modified' => '2019-01-02 03:04:05']);
 
+
         $order = (new Definition('orders'))
             ->withColumns('id', 'date_created')
             ->withOne($discount, 'discount', 'order_id')
+            ->withOne($fulfillment, 'fulfillment', 'order_id')
             ->withMany($item, 'items', 'order_id')
             ->withDeletionTimestamp('date_deleted');
 
@@ -343,4 +348,3 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         return new Mapping($this->db, $customer);
     }
 }
-
