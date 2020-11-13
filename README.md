@@ -73,7 +73,7 @@ $mapping = $mapper->mapping($post);
 The second constructor argument for `Definition` is an array of columns that uniquely identify a record within the table.
 By default it's `['id']`.
 
-Data to be set on insert and update can be set by calling `withCreationData()` and `withModificationData()` respectively. For example if wanted to add a `date_entered` and `date_modified` columns to the `$post` definition, you would enter it as follows:
+Data to be set on insert and update can be set by calling `withCreationData()` and `withModificationData()` respectively. For example if you wanted to add a `date_entered` and `date_modified` columns to the `$post` definition, you would enter it as follows:
 ```php
 $post = (new Definition('posts'))
     ->withColumns('title', 'content')
