@@ -3,7 +3,7 @@ PicoMapper
 
 PicoMapper is a minimalist data mapper built on PicoDb.
 
-[![Build Status](https://travis-ci.org/tithely/picomapper.svg?branch=master)](https://travis-ci.org/tithely/picomapper)
+![Run Tests](https://github.com/tithely/picomapper/workflows/Run%20Tests/badge.svg)
 
 Features
 --------
