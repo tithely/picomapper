@@ -4,14 +4,14 @@
   "type": "library",
   "license": "MIT",
   "require": {
-    "php": ">=7.0",
+    "php": ">=7.2",
     "elvanto/picodb": "^2.0"
   },
   "autoload": {
     "psr-4": {"PicoMapper\\": "src/"}
   },
   "require-dev": {
-    "phpunit/phpunit": "6.5.14"
+    "phpunit/phpunit": "8.5.*"
   },
   "scripts": {
     "test": "phpunit"
