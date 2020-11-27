@@ -17,7 +17,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
      */
     private $hook;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->db = new Database(['driver' => 'sqlite', 'filename' => ':memory:']);
         $this->hook = $this->getMockBuilder(\stdClass::class)
@@ -32,7 +32,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->db = null;
         $this->hook = null;
