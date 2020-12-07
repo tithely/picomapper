@@ -16,13 +16,13 @@ class MapperTest extends \PHPUnit\Framework\TestCase
      */
     private $db;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->db = new Database(['driver' => 'sqlite', 'filename' => ':memory:']);
         $this->mapper = new Mapper($this->db);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->mapper = null;
         $this->db = null;
