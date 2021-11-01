@@ -304,6 +304,10 @@ class Mapping extends Table
             }
         }
 
+        if ($this->definition->getDeletionTimestamp()) {
+            $query->isNull($this->definition->getDeletionTimestamp());
+        }
+
         $base = $this->getBaseData($data);
         $originalBase = $this->getBaseData($original);
 
@@ -432,7 +436,7 @@ class Mapping extends Table
                     $query->in($primary, array_values($primaryValues));
                     $query->closeOr();
 
-                    $result = $deletion ? $query->update([$deletion => gmdate('Y-m-d H:i:s')]) : $query->remove();
+                    $result = $deletion ? $query->isNull($deletion)->update([$deletion => gmdate('Y-m-d H:i:s')]) : $query->remove();
                     if (!$result) {
                         throw new \Exception('Failed to delete records.');
                     }

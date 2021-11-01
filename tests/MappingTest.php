@@ -303,7 +303,6 @@ class MappingTest extends \PHPUnit\Framework\TestCase
             ->withColumns('id', 'description', 'amount', 'modified')
             ->withModificationData(['modified' => '2019-01-02 03:04:05']);
 
-
         $order = (new Definition('orders'))
             ->withColumns('id', 'date_created')
             ->withOne($discount, 'discount', 'order_id')
