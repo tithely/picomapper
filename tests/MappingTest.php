@@ -268,8 +268,13 @@ class MappingTest extends \PHPUnit\Framework\TestCase
                 ]
             ]
         ];
-        $this->expectException(SQLException::class);
-        $this->getMapping()->insert($customer);
+
+        try {
+            $this->getMapping()->insert($customer);
+        } catch (SQLException $exception) {
+        }
+        $inserted = $this->getMapping()->eq('id', 3)->findOne();
+        $this->assertNull($inserted);
     }
 
     public function testUpdateRollback()
