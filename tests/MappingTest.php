@@ -4,6 +4,7 @@ namespace PicoMapper;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use PicoDb\Database;
+use PicoDb\SQLException;
 
 class MappingTest extends \PHPUnit\Framework\TestCase
 {
@@ -268,9 +269,12 @@ class MappingTest extends \PHPUnit\Framework\TestCase
             ]
         ];
 
-        $this->getMapping()->insert($customer);
-        $inserted = $this->getMapping()->eq('id', 3)->findOne();
+        try {
+            $this->getMapping()->insert($customer);
+        } catch (SQLException $exception) {
+        }
 
+        $inserted = $this->getMapping()->eq('id', 3)->findOne();
         $this->assertNull($inserted);
     }
 
