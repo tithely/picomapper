@@ -273,6 +273,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
             $this->getMapping()->insert($customer);
         } catch (SQLException $exception) {
         }
+
         $inserted = $this->getMapping()->eq('id', 3)->findOne();
         $this->assertNull($inserted);
     }
