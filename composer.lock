@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "418e6754c0b525bb7cf5496521310706",
+    "content-hash": "9f74ee8e01f28cec052bbbb61f100342",
     "packages": [
         {
             "name": "elvanto/picodb",
-            "version": "4.1.0",
+            "version": "5.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/elvanto/picodb.git",
-                "reference": "9c8e2b47967d76fdb57267fc6248ff24045b21c3"
+                "reference": "f39603ce93cc5b4ddfebbba43cb1a31692bb95a4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/elvanto/picodb/zipball/9c8e2b47967d76fdb57267fc6248ff24045b21c3",
-                "reference": "9c8e2b47967d76fdb57267fc6248ff24045b21c3",
+                "url": "https://api.github.com/repos/elvanto/picodb/zipball/f39603ce93cc5b4ddfebbba43cb1a31692bb95a4",
+                "reference": "f39603ce93cc5b4ddfebbba43cb1a31692bb95a4",
                 "shasum": ""
             },
             "require": {
@@ -45,9 +45,9 @@
             "description": "Minimalist database query builder",
             "support": {
                 "issues": "https://github.com/elvanto/picodb/issues",
-                "source": "https://github.com/elvanto/picodb/tree/4.1.0"
+                "source": "https://github.com/elvanto/picodb/tree/5.0.0"
             },
-            "time": "2021-11-16T05:39:32+00:00"
+            "time": "2021-12-22T04:33:02+00:00"
         }
     ],
     "packages-dev": [
