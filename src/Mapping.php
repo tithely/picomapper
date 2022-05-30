@@ -433,7 +433,10 @@ class Mapping extends Table
                         });
                     }
 
-                    $query->in($primary, array_values($primaryValues));
+                    if (!empty($primaryValues)) {
+                        $query->in($primary, array_values($primaryValues));
+                    }
+
                     $query->closeOr();
 
                     $result = $deletion ? $query->isNull($deletion)->update([$deletion => gmdate('Y-m-d H:i:s')]) : $query->remove();
