@@ -27,6 +27,8 @@ class Mapping extends Table
      */
     protected $lastId;
 
+    protected bool $hasJoin = false;
+
     /**
      * Mapping constructor.
      *
@@ -51,8 +53,8 @@ class Mapping extends Table
      */
     public function findOne()
     {
-        if ($this->definition->getDeletionTimestamp()) {
-            $this->isNull($this->definition->getDeletionTimestamp());
+        if ($this->getDeletionTimestamp()) {
+            $this->isNull($this->getDeletionTimestamp());
         }
 
         $this->columns(...$this->buildColumns());
@@ -74,8 +76,8 @@ class Mapping extends Table
      */
     public function findAll()
     {
-        if ($this->definition->getDeletionTimestamp()) {
-            $this->isNull($this->definition->getDeletionTimestamp());
+        if ($this->getDeletionTimestamp()) {
+            $this->isNull($this->getDeletionTimestamp());
         }
 
         $this->columns(...$this->buildColumns());
@@ -107,7 +109,7 @@ class Mapping extends Table
 
         if ($this->definition->isAutoIncrement()) {
             // Force the database to assign sequence numbers
-            unset($base[$this->definition->getPrimaryKey()[0]]);
+            unset($base[$this->getPrimaryKey()[0]]);
         }
 
         if (!parent::insert($base)) {
@@ -117,7 +119,7 @@ class Mapping extends Table
 
         if ($this->definition->isAutoIncrement()) {
             $this->lastId = $this->db->getLastId();
-            $data[$this->definition->getPrimaryKey()[0]] = $this->lastId;
+            $data[$this->getPrimaryKey()[0]] = $this->lastId;
         }
 
         foreach ($this->definition->getProperties() as $property) {
@@ -166,7 +168,7 @@ class Mapping extends Table
      */
     public function update(array $data = array())
     {
-        $primaryKey = $this->definition->getPrimaryKey();
+        $primaryKey = $this->getPrimaryKey();
 
         if ($this->definition->isReadOnly()) {
             return true;
@@ -225,7 +227,7 @@ class Mapping extends Table
      */
     public function save(array $data)
     {
-        $primaryKey = $this->definition->getPrimaryKey();
+        $primaryKey = $this->getPrimaryKey();
 
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
@@ -286,7 +288,7 @@ class Mapping extends Table
      */
     private function replace(array $data, array $original, array $deleteIds = [])
     {
-        $primaryKey = $this->definition->getPrimaryKey();
+        $primaryKey = $this->getPrimaryKey();
 
         $query = $this
             ->db
@@ -304,8 +306,8 @@ class Mapping extends Table
             }
         }
 
-        if ($this->definition->getDeletionTimestamp()) {
-            $query->isNull($this->definition->getDeletionTimestamp());
+        if ($this->getDeletionTimestamp()) {
+            $query->isNull($this->getDeletionTimestamp());
         }
 
         $base = $this->getBaseData($data);
@@ -449,6 +451,210 @@ class Mapping extends Table
     }
 
     /**
+     * Override these table methods and set $isJoin to true
+     *
+     * @method  $this   join($table, $foreign_column, $local_column, $local_table, $alias)
+     * @method  $this   left($table1, $alias1, $column1, $table2, $column2)
+     * @method  $this   inner($table1, $alias1, $column1, $table2, $column2)
+     * @method  $this   joinSubquery($subQuery, $alias, $foreign_column, $local_column, $local_table)
+     * @method  $this   innerJoinSubquery($subQuery, $alias, $foreign_column, $local_column, $local_table)
+     *
+     */
+
+    public function join($table, $foreign_column, $local_column, $local_table = '', $alias = '')
+    {
+        $this->hasJoin = true;
+        return parent::join($table, $foreign_column, $local_column, $local_table, $alias);
+    }
+
+    public function left($table1, $alias1, $column1, $table2, $column2)
+    {
+        $this->hasJoin = true;
+        return parent::left($table1, $alias1, $column1, $table2, $column2);
+    }
+
+    public function joinSubquery(Table $subQuery, string $alias, string $foreign_column, string $local_column, string $local_table = ''): Table
+    {
+        $this->hasJoin = true;
+        return parent::joinSubquery($subQuery, $alias, $foreign_column, $local_column, $local_table);
+    }
+
+    public function innerJoinSubquery(Table $subQuery, string $alias, string $foreign_column, string $local_column, string $local_table = ''): Table
+    {
+        $this->hasJoin = true;
+        return parent::innerJoinSubquery($subQuery, $alias, $foreign_column, $local_column, $local_table);
+    }
+
+    /**
+     * Override these table methods and prefix the mapping table to all columns which are ambiguous
+     *
+     * @method   $this   eq($column, $value)
+     * @method   $this   neq($column, $value)
+     * @method   $this   in($column, array $values)
+     * @method   $this   inSubquery($column, Table $subquery)
+     * @method   $this   notIn($column, array $values)
+     * @method   $this   notInSubquery($column, Table $subquery)
+     * @method   $this   like($column, $value)
+     * @method   $this   ilike($column, $value)
+     * @method   $this   notLike($column, $value)
+     * @method   $this   gt($column, $value)
+     * @method   $this   gtSubquery($column, Table $subquery)
+     * @method   $this   lt($column, $value)
+     * @method   $this   ltSubquery($column, Table $subquery)
+     * @method   $this   gte($column, $value)
+     * @method   $this   gteSubquery($column, Table $subquery)
+     * @method   $this   lte($column, $value)
+     * @method   $this   lteSubquery($column, Table $subquery)
+     * @method   $this   between($column, $lowValue, $highValue)
+     * @method   $this   notBetween($column, $lowValue, $highValue)
+     * @method   $this   isNull($column)
+     * @method   $this   notNull($column)
+     * @method  $this   orderBy($column)
+     * @method  $this   asc($column)
+     * @method  $this   desc($column)
+     * @method  $this   groupBy()
+     */
+
+    /**
+     * @inheritDoc
+     */
+    public function eq($column, $value) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::eq($this->hasJoin ? $prefixedColumn : $column,$value);
+    }
+
+    public function neq($column, $value) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::neq($this->hasJoin ? $prefixedColumn : $column,$value);
+    }
+
+    public function in($column, array $values) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::in($this->hasJoin ? $prefixedColumn : $column, $values);
+    }
+
+    public function inSubquery($column, Table $subquery) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::inSubquery($this->hasJoin ? $prefixedColumn : $column, $subquery);
+    }
+
+    public function notIn($column, array $values) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::notIn($this->hasJoin ? $prefixedColumn : $column, $values);
+    }
+
+    public function notInSubquery($column, Table $subquery) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::notInSubquery($this->hasJoin ? $prefixedColumn : $column, $subquery);
+    }
+
+    public function like($column, $value) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::like($this->hasJoin ? $prefixedColumn : $column, $value);
+    }
+
+    public function ilike($column, $value) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::ilike($this->hasJoin ? $prefixedColumn : $column, $value);
+    }
+
+    public function notLike($column, $value) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::notLike($this->hasJoin ? $prefixedColumn : $column, $value);
+    }
+
+    public function gt($column, $value) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::gt($this->hasJoin ? $prefixedColumn : $column, $value);
+    }
+
+    public function gtSubquery($column, Table $subquery) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::gtSubquery($this->hasJoin ? $prefixedColumn : $column, $subquery);
+    }
+
+    public function lt($column, $value) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::lt($this->hasJoin ? $prefixedColumn : $column, $value);
+    }
+
+    public function ltSubquery($column, Table $subquery) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::ltSubquery($this->hasJoin ? $prefixedColumn : $column, $subquery);
+    }
+
+    public function gte($column, $value) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::gte($this->hasJoin ? $prefixedColumn : $column, $value);
+    }
+
+    public function gteSubquery($column, Table $subquery) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::gteSubquery($this->hasJoin ? $prefixedColumn : $column, $subquery);
+    }
+
+    public function lte($column, $value) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::lte($this->hasJoin ? $prefixedColumn : $column, $value);
+    }
+
+    public function lteSubquery($column, Table $subquery) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::lteSubquery($this->hasJoin ? $prefixedColumn : $column, $subquery);
+    }
+
+    public function between($column, $lowValue, $highValue) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::between($this->hasJoin ? $prefixedColumn : $column, $lowValue, $highValue);
+    }
+
+    public function notBetween($column, $lowValue, $highValue) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::notBetween($this->hasJoin ? $prefixedColumn : $column, $lowValue, $highValue);
+    }
+
+    public function isNull($column) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::isNull($this->hasJoin ? $prefixedColumn : $column);
+    }
+
+    public function notNull($column) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::notNull($this->hasJoin ? $prefixedColumn : $column);
+    }
+
+    public function orderBy($column, $order = self::SORT_ASC) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::orderBy($this->hasJoin ? $prefixedColumn : $column. $order);
+    }
+
+    public function asc($column) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::asc($this->hasJoin ? $prefixedColumn : $column);
+    }
+
+    public function desc($column) {
+        $prefixedColumn = $this->prefixTableNameTo($column, $this->definition->getTable());
+        return parent::desc($this->hasJoin ? $prefixedColumn : $column);
+    }
+
+    public function groupBy() {
+        $columns = func_get_args();
+        $prefixedColumns = $this->prefixTableNameTo($columns, $this->definition->getTable());
+        return parent::groupBy(...($this->hasJoin ? $prefixedColumns : $columns));
+    }
+
+
+    // If mapping has a join, the primary keys and deletion timestamp are automatically prefixed.
+    private function getPrimaryKey() {
+        return $this->hasJoin ? $this->prefixTableNameTo($this->definition->getPrimaryKey(), $this->definition->getTable()) : $this->definition->getPrimaryKey();
+    }
+
+    private function getDeletionTimestamp() {
+        return $this->hasJoin ? $this->prefixTableNameTo($this->definition->getDeletionTimestamp(), $this->definition->getTable()) : $this->definition->getDeletionTimestamp();
+    }
+
+/**
      * Returns an associative array mapping table names to primary keys
      * constructed by recursively scanning data.
      *
@@ -459,8 +665,8 @@ class Mapping extends Table
     private function collectPrimary(array $data = [], $list = [])
     {
         $table = $this->definition->getTable();
-        $primaryKey = $this->definition->getPrimaryKey();
-        $deletion = $this->definition->getDeletionTimestamp();
+        $primaryKey = $this->getPrimaryKey();
+        $deletion = $this->getDeletionTimestamp();
 
         $item = [];
 
@@ -556,7 +762,7 @@ class Mapping extends Table
         $columns = array_merge(
             $this->columns,
             $this->definition->getColumns(),
-            $this->definition->getPrimaryKey()
+            $this->getPrimaryKey()
         );
 
         foreach ($this->definition->getProperties() as $property) {
@@ -573,7 +779,7 @@ class Mapping extends Table
      */
     private function buildColumns()
     {
-        $columns = $this->definition->getPrimaryKey();
+        $columns = $this->getPrimaryKey();
         $required = array_merge($this->definition->getColumns(), $this->columns);
 
         foreach ($this->definition->getProperties() as $item) {
@@ -607,7 +813,7 @@ class Mapping extends Table
         // Add primary keys to arguments
         array_unshift(
             $args,
-            array_intersect_key($data, array_flip($this->definition->getPrimaryKey()))
+            array_intersect_key($data, array_flip($this->getPrimaryKey()))
         );
 
         // Add table to arguments
@@ -617,5 +823,63 @@ class Mapping extends Table
         foreach ($this->hooks[$event] as $hook) {
             call_user_func_array($hook, $args);
         }
+    }
+
+    /**
+     * Checks if any table name is appended to the column
+     *
+     * @param $column
+     * @return bool
+     */
+    function isPrefixed($column): bool
+    {
+        return strpos($column, '.') !== false;
+    }
+
+    /**
+     * Appends table name to provided value. Works recursively with arrays. If a dictionary is passed, only modifies
+     * first level of dictionary keys, does not work recursively with dictionaries.
+     *
+     * @return string | array
+     */
+    function prefixTableNameTo($input, $table) {
+        if (is_string($input)) {
+            return $this->isPrefixed($input) ? $input : "$table.$input";
+        } elseif (is_array($input)) {
+            $output = [];
+            foreach ($input as $key => $value) {
+                if (is_string($key)) {
+                    $key = $this->prefixTableNameTo($key, $table);
+                } else {
+                    $value = $this->prefixTableNameTo($value, $table);
+                }
+                $output[$key] = $value;
+            }
+            return $output;
+        }
+        return $input;
+    }
+
+    /**
+     * Removes table prefix from provided value. Works recursively with arrays.
+     *
+     * @return string | array
+     */
+    function removeTablePrefixFrom($input, $table) {
+        if (is_string($input)) {
+            return $this->isPrefixed($input) ? substr($input, strlen($table) + 1) : $input;
+        } elseif (is_array($input)) {
+            $output = [];
+            foreach ($input as $key => $value) {
+                if (is_string($key)) {
+                    $key = $this->removeTablePrefixFrom($key, $table);
+                } else {
+                    $value = $this->removeTablePrefixFrom($value, $table);
+                }
+                $output[$key] = $value;
+            }
+            return $output;
+        }
+        return $input;
     }
 }
