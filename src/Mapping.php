@@ -860,27 +860,4 @@ class Mapping extends Table
         }
         return $input;
     }
-
-    /**
-     * Removes table prefix from provided value. Works recursively with arrays.
-     *
-     * @return string | array
-     */
-    function removeTablePrefixFrom($input, $table) {
-        if (is_string($input)) {
-            return $this->requiresPrefix($input) ? $input : substr($input, strlen($table) + 1);
-        } elseif (is_array($input)) {
-            $output = [];
-            foreach ($input as $key => $value) {
-                if (is_string($key)) {
-                    $key = $this->removeTablePrefixFrom($key, $table);
-                } else {
-                    $value = $this->removeTablePrefixFrom($value, $table);
-                }
-                $output[$key] = $value;
-            }
-            return $output;
-        }
-        return $input;
-    }
 }

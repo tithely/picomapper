@@ -322,40 +322,10 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $actualOutput = $this->getMapping()->prefixTableNameTo($input, 'table');
         $this->assertEquals($expectedOutput, $actualOutput);
 
-        $input = 'table.field';
-        $expectedOutput = 'field';
-        $actualOutput = $this->getMapping()->removeTablePrefixFrom($input, 'table');
-        $this->assertEquals($expectedOutput, $actualOutput);
-
-        $input = ['table.field1', 'table.field2'];
-        $expectedOutput = ['field1', 'field2'];
-        $actualOutput = $this->getMapping()->removeTablePrefixFrom($input, 'table');
-        $this->assertEquals($expectedOutput, $actualOutput);
-
-        $input = ['table.field1', ['table.nestedField1', 'table.nestedField2']];
-        $expectedOutput = ['field1', ['nestedField1', 'nestedField2']];
-        $actualOutput = $this->getMapping()->removeTablePrefixFrom($input, 'table');
-        $this->assertEquals($expectedOutput, $actualOutput);
-
-        $input = ['table.field1' => 'value1', 'table.field2' => 'value2'];
-        $expectedOutput = ['field1' => 'value1', 'field2' => 'value2'];
-        $actualOutput = $this->getMapping()->removeTablePrefixFrom($input, 'table');
-        $this->assertEquals($expectedOutput, $actualOutput);
-
-        $input = ['table.field1' => 'value1', 'table.field2' => ['nestedField1' => 'nestedValue1', 'nestedField2' => 'nestedValue2']];
-        $expectedOutput = ['field1' => 'value1', 'field2' => ['nestedField1' => 'nestedValue1', 'nestedField2' => 'nestedValue2']];
-        $actualOutput = $this->getMapping()->removeTablePrefixFrom($input, 'table');
-        $this->assertEquals($expectedOutput, $actualOutput);
-
         // Test multi-pass safety
         $input = ['field1', 'field2'];
         $expectedOutput = ['table.field1', 'table.field2'];
         $actualOutput = $this->getMapping()->prefixTableNameTo($this->getMapping()->prefixTableNameTo($input, 'table'), 'table');
-        $this->assertEquals($expectedOutput, $actualOutput);
-
-        $input = ['table.field1', 'table.field2'];
-        $expectedOutput = ['field1', 'field2'];
-        $actualOutput = $this->getMapping()->removeTablePrefixFrom($this->getMapping()->removeTablePrefixFrom($input, 'table'), 'table');
         $this->assertEquals($expectedOutput, $actualOutput);
 
         // Don't change input if other table already appended
