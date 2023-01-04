@@ -826,14 +826,15 @@ class Mapping extends Table
     }
 
     /**
-     * Checks if any table name is appended to the column
+     * Checks if string is a valid SQL column and has no table prefix.
      *
      * @param $column
      * @return bool
      */
-    function isPrefixed($column): bool
+    private function requiresPrefix($column): bool
     {
-        return strpos($column, '.') !== false;
+        $pattern = '/^[a-zA-Z_][a-zA-Z0-9_]*$/';
+        return (bool) preg_match($pattern, $column);
     }
 
     /**
@@ -844,7 +845,7 @@ class Mapping extends Table
      */
     function prefixTableNameTo($input, $table) {
         if (is_string($input)) {
-            return $this->isPrefixed($input) ? $input : "$table.$input";
+            return $this->requiresPrefix($input) ? "$table.$input" : $input;
         } elseif (is_array($input)) {
             $output = [];
             foreach ($input as $key => $value) {
@@ -867,7 +868,7 @@ class Mapping extends Table
      */
     function removeTablePrefixFrom($input, $table) {
         if (is_string($input)) {
-            return $this->isPrefixed($input) ? substr($input, strlen($table) + 1) : $input;
+            return $this->requiresPrefix($input) ? $input : substr($input, strlen($table) + 1);
         } elseif (is_array($input)) {
             $output = [];
             foreach ($input as $key => $value) {
