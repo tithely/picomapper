@@ -339,7 +339,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
     {
         $customer = $this->getMapping()
             ->join('orders', 'customer_id', 'id')
-            ->eq('id', 2)
+            ->eq('customers.id', 2)
             ->findOne();
 
         $this->assertEquals('Jane Doe', $customer['name']);
@@ -357,7 +357,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
     {
         $customer = $this->getMapping()
             ->left('orders', 'o', 'customer_id', 'customers', 'id')
-            ->eq('id', 2)
+            ->eq('customers.id', 2)
             ->findOne();
 
         $this->assertEquals('Jane Doe', $customer['name']);
@@ -376,7 +376,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $customer = $this->getMapping()
             ->left('orders', 'o', 'customer_id', 'customers', 'id')
             ->left('items', 'i', 'order_id', 'o', 'id')
-            ->eq('id', 2)
+            ->eq('customers.id', 2)
             ->findOne();
 
         $this->assertEquals('Jane Doe', $customer['name']);
