@@ -449,11 +449,11 @@ class Mapping extends Table
     }
 
     private function getPrimaryKey($prefixed = false) {
-        return ($prefixed) ? $this->prefixTableNameTo($this->definition->getPrimaryKey(), $this->definition->getTable()) : $this->definition->getPrimaryKey();
+        return ($prefixed) ? $this->prefixTableNameTo($this->definition->getPrimaryKey()) : $this->definition->getPrimaryKey();
     }
 
     private function getDeletionTimestamp($prefixed = false) {
-        return ($prefixed) ? $this->prefixTableNameTo($this->definition->getDeletionTimestamp(), $this->definition->getTable()) : $this->definition->getDeletionTimestamp();
+        return ($prefixed) ? $this->prefixTableNameTo($this->definition->getDeletionTimestamp()) : $this->definition->getDeletionTimestamp();
     }
 
 /**
@@ -585,7 +585,7 @@ class Mapping extends Table
         $required = array_merge($this->definition->getColumns(), $this->columns);
 
         foreach ($this->definition->getProperties() as $item) {
-            $required[] = ($item->getLocalColumn() === $this->getPrimaryKey()) ? $this->prefixTableNameTo($item->getLocalColumn(), $this->definition->getTable()) : $item->getLocalColumn();
+            $required[] = ($item->getLocalColumn() === $this->getPrimaryKey()) ? $this->prefixTableNameTo($item->getLocalColumn()) : $item->getLocalColumn();
         }
 
         foreach (array_unique($required) as $column) {
@@ -645,7 +645,8 @@ class Mapping extends Table
      *
      * @return string | array
      */
-    function prefixTableNameTo($input, $table) {
+    function prefixTableNameTo($input) {
+        $table = $this->definition->getTable();
         if (is_string($input)) {
             return $this->requiresPrefix($input) ? "$table.$input" : $input;
         } elseif (is_array($input)) {
