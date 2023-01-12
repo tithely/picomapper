@@ -292,46 +292,49 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
     public function testPrefixAndRemoveTableName()
     {
+        $method = new \ReflectionMethod('PicoMapper\Mapping', 'prefixTableNameTo');
+        $method->setAccessible(true);
+
         // Test with string input
         $input = 'field';
         $expectedOutput = 'customers.field';
-        $actualOutput = $this->getMapping()->prefixTableNameTo($input);
+        $actualOutput = $method->invoke($this->getMapping(), $input);
         $this->assertEquals($expectedOutput, $actualOutput);
 
         // Test with array input
         $input = ['field1', 'field2'];
         $expectedOutput = ['customers.field1', 'customers.field2'];
-        $actualOutput = $this->getMapping()->prefixTableNameTo($input);
+        $actualOutput = $method->invoke($this->getMapping(), $input);
         $this->assertEquals($expectedOutput, $actualOutput);
 
         // Test with nested array input
         $input = ['field1', ['nestedField1', 'nestedField2']];
         $expectedOutput = ['customers.field1', ['customers.nestedField1', 'customers.nestedField2']];
-        $actualOutput = $this->getMapping()->prefixTableNameTo($input);
+        $actualOutput = $method->invoke($this->getMapping(), $input);
         $this->assertEquals($expectedOutput, $actualOutput);
 
         // Test with dictionary input
         $input = ['field1' => 'value1', 'field2' => 'value2'];
         $expectedOutput = ['customers.field1' => 'value1', 'customers.field2' => 'value2'];
-        $actualOutput = $this->getMapping()->prefixTableNameTo($input);
+        $actualOutput = $method->invoke($this->getMapping(), $input);
         $this->assertEquals($expectedOutput, $actualOutput);
 
         // Test with dictionary with nested dictionary input
         $input = ['field1' => 'value1', 'field2' => ['nestedField1' => 'nestedValue1', 'nestedField2' => 'nestedValue2']];
         $expectedOutput = ['customers.field1' => 'value1', 'customers.field2' => ['nestedField1' => 'nestedValue1', 'nestedField2' => 'nestedValue2']];
-        $actualOutput = $this->getMapping()->prefixTableNameTo($input);
+        $actualOutput = $method->invoke($this->getMapping(), $input);
         $this->assertEquals($expectedOutput, $actualOutput);
 
         // Test multi-pass safety
         $input = ['field1', 'field2'];
         $expectedOutput = ['customers.field1', 'customers.field2'];
-        $actualOutput = $this->getMapping()->prefixTableNameTo($this->getMapping()->prefixTableNameTo($input));
+        $actualOutput = $method->invoke($this->getMapping(), $method->invoke($this->getMapping(), $input));
         $this->assertEquals($expectedOutput, $actualOutput);
 
         // Don't change input if other table already appended
         $input = 'table2.field';
         $expectedOutput = 'table2.field';
-        $actualOutput = $this->getMapping()->prefixTableNameTo($input);
+        $actualOutput = $method->invoke($this->getMapping(), $input);
         $this->assertEquals($expectedOutput, $actualOutput);
     }
 

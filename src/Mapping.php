@@ -650,7 +650,7 @@ class Mapping extends Table
      *
      * @return string | array
      */
-    function prefixTableNameTo($input) {
+    private function prefixTableNameTo($input) {
         $table = $this->definition->getTable();
         if (is_string($input)) {
             return $this->requiresPrefix($input) ? "$table.$input" : $input;
