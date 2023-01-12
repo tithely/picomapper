@@ -51,8 +51,8 @@ class Mapping extends Table
      */
     public function findOne()
     {
-        if ($this->getDeletionTimestamp()) {
-            $this->isNull($this->getDeletionTimestamp(true));
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
         }
 
         $this->columns(...$this->buildColumns());
@@ -74,8 +74,8 @@ class Mapping extends Table
      */
     public function findAll()
     {
-        if ($this->getDeletionTimestamp()) {
-            $this->isNull($this->getDeletionTimestamp(true));
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
         }
 
         $this->columns(...$this->buildColumns());
@@ -107,7 +107,7 @@ class Mapping extends Table
 
         if ($this->definition->isAutoIncrement()) {
             // Force the database to assign sequence numbers
-            unset($base[$this->getPrimaryKey()[0]]);
+            unset($base[$this->definition->getPrimaryKey()[0]]);
         }
 
         if (!parent::insert($base)) {
@@ -117,7 +117,7 @@ class Mapping extends Table
 
         if ($this->definition->isAutoIncrement()) {
             $this->lastId = $this->db->getLastId();
-            $data[$this->getPrimaryKey()[0]] = $this->lastId;
+            $data[$this->definition->getPrimaryKey()[0]] = $this->lastId;
         }
 
         foreach ($this->definition->getProperties() as $property) {
@@ -166,7 +166,7 @@ class Mapping extends Table
      */
     public function update(array $data = array())
     {
-        $primaryKey = $this->getPrimaryKey();
+        $primaryKey = $this->definition->getPrimaryKey();
 
         if ($this->definition->isReadOnly()) {
             return true;
@@ -225,7 +225,7 @@ class Mapping extends Table
      */
     public function save(array $data)
     {
-        $primaryKey = $this->getPrimaryKey();
+        $primaryKey = $this->definition->getPrimaryKey();
 
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
@@ -286,7 +286,7 @@ class Mapping extends Table
      */
     private function replace(array $data, array $original, array $deleteIds = [])
     {
-        $primaryKey = $this->getPrimaryKey();
+        $primaryKey = $this->definition->getPrimaryKey();
 
         $query = $this
             ->db
@@ -304,8 +304,8 @@ class Mapping extends Table
             }
         }
 
-        if ($this->getDeletionTimestamp()) {
-            $query->isNull($this->getDeletionTimestamp(true));
+        if ($this->definition->getDeletionTimestamp()) {
+            $query->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
         }
 
         $base = $this->getBaseData($data);
@@ -448,14 +448,6 @@ class Mapping extends Table
         }
     }
 
-    private function getPrimaryKey($prefixed = false) {
-        return ($prefixed) ? $this->prefixTableNameTo($this->definition->getPrimaryKey()) : $this->definition->getPrimaryKey();
-    }
-
-    private function getDeletionTimestamp($prefixed = false) {
-        return ($prefixed) ? $this->prefixTableNameTo($this->definition->getDeletionTimestamp()) : $this->definition->getDeletionTimestamp();
-    }
-
 /**
      * Returns an associative array mapping table names to primary keys
      * constructed by recursively scanning data.
@@ -467,8 +459,8 @@ class Mapping extends Table
     private function collectPrimary(array $data = [], $list = [])
     {
         $table = $this->definition->getTable();
-        $primaryKey = $this->getPrimaryKey();
-        $deletion = $this->getDeletionTimestamp();
+        $primaryKey = $this->definition->getPrimaryKey();
+        $deletion = $this->definition->getDeletionTimestamp();
 
         $item = [];
 
@@ -564,7 +556,7 @@ class Mapping extends Table
         $columns = array_merge(
             $this->columns,
             $this->definition->getColumns(),
-            $this->getPrimaryKey()
+            $this->definition->getPrimaryKey()
         );
 
         foreach ($this->definition->getProperties() as $property) {
@@ -581,11 +573,11 @@ class Mapping extends Table
      */
     private function buildColumns()
     {
-        $columns = $this->getPrimaryKey(true);
+        $columns = $this->prefixTableNameTo($this->definition->getPrimaryKey());
         $required = array_merge($this->definition->getColumns(), $this->columns);
 
         foreach ($this->definition->getProperties() as $item) {
-            $required[] = ($item->getLocalColumn() === $this->getPrimaryKey()) ? $this->prefixTableNameTo($item->getLocalColumn()) : $item->getLocalColumn();
+            $required[] = in_array($item->getLocalColumn(), $this->definition->getPrimaryKey()) ? $this->prefixTableNameTo($item->getLocalColumn()) : $item->getLocalColumn();
         }
 
         foreach (array_unique($required) as $column) {
@@ -615,7 +607,7 @@ class Mapping extends Table
         // Add primary keys to arguments
         array_unshift(
             $args,
-            array_intersect_key($data, array_flip($this->getPrimaryKey()))
+            array_intersect_key($data, array_flip($this->definition->getPrimaryKey()))
         );
 
         // Add table to arguments
