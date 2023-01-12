@@ -448,7 +448,7 @@ class Mapping extends Table
         }
     }
 
-/**
+    /**
      * Returns an associative array mapping table names to primary keys
      * constructed by recursively scanning data.
      *
@@ -620,20 +620,33 @@ class Mapping extends Table
     }
 
     /**
-     * Checks if string is a valid SQL column and has no table prefix.
+     * Checks if string is a valid SQL column name and has no table prefix.
      *
-     * @param $column
+     * @param string $column
      * @return bool
      */
-    private function requiresPrefix($column): bool
+    private function requiresPrefix(string $column): bool
     {
         $pattern = '/^[a-zA-Z_][a-zA-Z0-9_]*$/';
         return (bool) preg_match($pattern, $column);
     }
 
     /**
-     * Appends table name to provided value. Works recursively with arrays. If a dictionary is passed, only modifies
-     * first level of dictionary keys, does not work recursively with dictionaries.
+     * Appends table name to provided value. Works with strings, arrays, and dictionaries. If multidimensional array is
+     * passed, the values will be updated recursively. If a dictionary is passed, only the
+     * first level of dictionary keys will be modified, does not work recursively with nested dictionaries. It is also
+     * protected from multiple passes and will only prefix the column name once.
+     *
+     * String Example:
+     *      'field' -> 'table.field'
+     * Array Example:
+     *      ['field', 'field2'] -> ['table.field', 'table.field2']
+     *      ['field', ['field2', 'field3']] -> ['table.field', ['table.field2', 'table.field3']]
+     * Dictionary Example:
+     *      ['field' => 'value'] -> ['table.field' => 'value']
+     *      ['field' => ['field2' => 'value']] -> ['table.field' => ['field2' => 'value']]
+     *      [['field' => 'value']] -> [['table.field' => 'value']]
+     *      [['field' => ['field2' => 'value']]] -> [['table.field' => ['field2' => 'value']]]
      *
      * @return string | array
      */
@@ -645,9 +658,9 @@ class Mapping extends Table
             $output = [];
             foreach ($input as $key => $value) {
                 if (is_string($key)) {
-                    $key = $this->prefixTableNameTo($key, $table);
+                    $key = $this->prefixTableNameTo($key);
                 } else {
-                    $value = $this->prefixTableNameTo($value, $table);
+                    $value = $this->prefixTableNameTo($value);
                 }
                 $output[$key] = $value;
             }
