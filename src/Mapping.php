@@ -639,9 +639,11 @@ class Mapping extends Table
      *
      * String Example:
      *      'field' -> 'table.field'
+     *
      * Array Example:
      *      ['field', 'field2'] -> ['table.field', 'table.field2']
      *      ['field', ['field2', 'field3']] -> ['table.field', ['table.field2', 'table.field3']]
+     *
      * Dictionary Example:
      *      ['field' => 'value'] -> ['table.field' => 'value']
      *      ['field' => ['field2' => 'value']] -> ['table.field' => ['field2' => 'value']]
@@ -652,10 +654,12 @@ class Mapping extends Table
      */
     private function prefixTableNameTo($input) {
         $table = $this->definition->getTable();
-        if (is_string($input)) {
-            return $this->requiresPrefix($input) ? "$table.$input" : $input;
-        } elseif (is_array($input)) {
+
+        if (is_string($input)) return $this->requiresPrefix($input) ? "$table.$input" : $input;
+
+        elseif (is_array($input)) {
             $output = [];
+
             foreach ($input as $key => $value) {
                 if (is_string($key)) {
                     $key = $this->prefixTableNameTo($key);
@@ -664,8 +668,10 @@ class Mapping extends Table
                 }
                 $output[$key] = $value;
             }
+
             return $output;
         }
+
         return $input;
     }
 }
