@@ -655,9 +655,9 @@ class Mapping extends Table
     private function prefixTableNameTo($input) {
         $table = $this->definition->getTable();
 
-        if (is_string($input)) return $this->requiresPrefix($input) ? "$table.$input" : $input;
-
-        elseif (is_array($input)) {
+        if (is_string($input)) {
+            return $this->requiresPrefix($input) ? "$table.$input" : $input;
+        } elseif (is_array($input)) {
             $output = [];
 
             foreach ($input as $key => $value) {
