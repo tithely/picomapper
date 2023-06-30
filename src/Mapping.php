@@ -577,7 +577,7 @@ class Mapping extends Table
         $required = array_merge($this->definition->getColumns(), $this->columns);
 
         foreach ($this->definition->getProperties() as $item) {
-            $required[] = in_array($item->getLocalColumn(), $this->definition->getPrimaryKey()) ? $this->prefixTableNameTo($item->getLocalColumn()) : $item->getLocalColumn();
+            $required[] = $item->getLocalColumn();
         }
 
         foreach (array_unique($required) as $column) {
