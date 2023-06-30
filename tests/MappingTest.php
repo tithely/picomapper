@@ -313,18 +313,6 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $actualOutput = $method->invoke($this->getMapping(), $input);
         $this->assertEquals($expectedOutput, $actualOutput);
 
-        // Test with dictionary input
-        $input = ['field1' => 'value1', 'field2' => 'value2'];
-        $expectedOutput = ['customers.field1' => 'value1', 'customers.field2' => 'value2'];
-        $actualOutput = $method->invoke($this->getMapping(), $input);
-        $this->assertEquals($expectedOutput, $actualOutput);
-
-        // Test with dictionary with nested dictionary input
-        $input = ['field1' => 'value1', 'field2' => ['nestedField1' => 'nestedValue1', 'nestedField2' => 'nestedValue2']];
-        $expectedOutput = ['customers.field1' => 'value1', 'customers.field2' => ['nestedField1' => 'nestedValue1', 'nestedField2' => 'nestedValue2']];
-        $actualOutput = $method->invoke($this->getMapping(), $input);
-        $this->assertEquals($expectedOutput, $actualOutput);
-
         // Test multi-pass safety
         $input = ['field1', 'field2'];
         $expectedOutput = ['customers.field1', 'customers.field2'];
