@@ -52,7 +52,7 @@ class Mapping extends Table
     public function findOne()
     {
         if ($this->definition->getDeletionTimestamp()) {
-            $this->isNull($this->definition->getDeletionTimestamp());
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
         }
 
         $this->columns(...$this->buildColumns());
@@ -75,7 +75,7 @@ class Mapping extends Table
     public function findAll()
     {
         if ($this->definition->getDeletionTimestamp()) {
-            $this->isNull($this->definition->getDeletionTimestamp());
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
         }
 
         $this->columns(...$this->buildColumns());
@@ -305,7 +305,7 @@ class Mapping extends Table
         }
 
         if ($this->definition->getDeletionTimestamp()) {
-            $query->isNull($this->definition->getDeletionTimestamp());
+            $query->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
         }
 
         $base = $this->getBaseData($data);
@@ -573,7 +573,7 @@ class Mapping extends Table
      */
     private function buildColumns()
     {
-        $columns = $this->definition->getPrimaryKey();
+        $columns = $this->prefixTableNameTo($this->definition->getPrimaryKey());
         $required = array_merge($this->definition->getColumns(), $this->columns);
 
         foreach ($this->definition->getProperties() as $item) {
@@ -617,5 +617,49 @@ class Mapping extends Table
         foreach ($this->hooks[$event] as $hook) {
             call_user_func_array($hook, $args);
         }
+    }
+
+    /**
+     * Checks if string is a valid SQL column name and has no table prefix.
+     *
+     * @param string $column
+     * @return bool
+     */
+    private function requiresPrefix(string $column): bool
+    {
+        $pattern = '/^[a-zA-Z_][a-zA-Z0-9_]*$/';
+        return (bool) preg_match($pattern, $column);
+    }
+
+    /**
+     * Appends table name to provided value. Works with strings and arrays. If multidimensional array is
+     * passed, the values will be updated recursively. Multiple passes are protected and will only prefix
+     * the column name once.
+     *
+     * String Example:
+     *      'field' -> 'table.field'
+     *
+     * Array Example:
+     *      ['field', 'field2'] -> ['table.field', 'table.field2']
+     *      ['field', ['field2', 'field3']] -> ['table.field', ['table.field2', 'table.field3']]
+     *
+     * @return string | array
+     */
+    private function prefixTableNameTo($input) {
+        $table = $this->definition->getTable();
+
+        if (is_string($input)) {
+            return $this->requiresPrefix($input) ? "$table.$input" : $input;
+        } elseif (is_array($input)) {
+            $output = [];
+
+            foreach ($input as $value) {
+                $output[] = $this->prefixTableNameTo($value);
+            }
+
+            return $output;
+        }
+
+        return $input;
     }
 }

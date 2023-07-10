@@ -290,6 +290,97 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($original, $updated);
     }
 
+    public function testPrefixAndRemoveTableName()
+    {
+        $method = new \ReflectionMethod('PicoMapper\Mapping', 'prefixTableNameTo');
+        $method->setAccessible(true);
+
+        // Test with string input
+        $input = 'field';
+        $expectedOutput = 'customers.field';
+        $actualOutput = $method->invoke($this->getMapping(), $input);
+        $this->assertEquals($expectedOutput, $actualOutput);
+
+        // Test with array input
+        $input = ['field1', 'field2'];
+        $expectedOutput = ['customers.field1', 'customers.field2'];
+        $actualOutput = $method->invoke($this->getMapping(), $input);
+        $this->assertEquals($expectedOutput, $actualOutput);
+
+        // Test with nested array input
+        $input = ['field1', ['nestedField1', 'nestedField2']];
+        $expectedOutput = ['customers.field1', ['customers.nestedField1', 'customers.nestedField2']];
+        $actualOutput = $method->invoke($this->getMapping(), $input);
+        $this->assertEquals($expectedOutput, $actualOutput);
+
+        // Test multi-pass safety
+        $input = ['field1', 'field2'];
+        $expectedOutput = ['customers.field1', 'customers.field2'];
+        $actualOutput = $method->invoke($this->getMapping(), $method->invoke($this->getMapping(), $input));
+        $this->assertEquals($expectedOutput, $actualOutput);
+
+        // Don't change input if other table already appended
+        $input = 'table2.field';
+        $expectedOutput = 'table2.field';
+        $actualOutput = $method->invoke($this->getMapping(), $input);
+        $this->assertEquals($expectedOutput, $actualOutput);
+    }
+
+    public function testFindOneWithDirectJoin()
+    {
+        $customer = $this->getMapping()
+            ->join('orders', 'customer_id', 'id')
+            ->eq('customers.id', 2)
+            ->findOne();
+
+        $this->assertEquals('Jane Doe', $customer['name']);
+        $this->assertCount(1, $customer['orders']);
+        $this->assertCount(2, $customer['orders'][0]['items']);
+
+        $this->assertEquals('2018-01-02', $customer['orders'][0]['date_created']);
+        $this->assertEquals('Bread', $customer['orders'][0]['items'][0]['description']);
+        $this->assertEquals(120, $customer['orders'][0]['items'][0]['amount']);
+        $this->assertEquals('Yogurt', $customer['orders'][0]['items'][1]['description']);
+        $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
+    }
+
+    public function testFindOneWithDirectLeft()
+    {
+        $customer = $this->getMapping()
+            ->left('orders', 'o', 'customer_id', 'customers', 'id')
+            ->eq('customers.id', 2)
+            ->findOne();
+
+        $this->assertEquals('Jane Doe', $customer['name']);
+        $this->assertCount(1, $customer['orders']);
+        $this->assertCount(2, $customer['orders'][0]['items']);
+
+        $this->assertEquals('2018-01-02', $customer['orders'][0]['date_created']);
+        $this->assertEquals('Bread', $customer['orders'][0]['items'][0]['description']);
+        $this->assertEquals(120, $customer['orders'][0]['items'][0]['amount']);
+        $this->assertEquals('Yogurt', $customer['orders'][0]['items'][1]['description']);
+        $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
+    }
+
+    public function testFindOneWithDirectAndSecondaryLeft()
+    {
+        $customer = $this->getMapping()
+            ->left('orders', 'o', 'customer_id', 'customers', 'id')
+            ->left('items', 'i', 'order_id', 'o', 'id')
+            ->eq('customers.id', 2)
+            ->findOne();
+
+        $this->assertEquals('Jane Doe', $customer['name']);
+        $this->assertCount(1, $customer['orders']);
+        $this->assertCount(2, $customer['orders'][0]['items']);
+
+        $this->assertEquals('2018-01-02', $customer['orders'][0]['date_created']);
+        $this->assertEquals('Bread', $customer['orders'][0]['items'][0]['description']);
+        $this->assertEquals(120, $customer['orders'][0]['items'][0]['amount']);
+        $this->assertEquals('Yogurt', $customer['orders'][0]['items'][1]['description']);
+        $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
+    }
+
     /**
      * Returns a new mapping for testing.
      *
@@ -316,7 +407,8 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
         $customer = (new Definition('customers'))
             ->withColumns('id', 'name')
-            ->withMany($order, 'orders', 'customer_id');
+            ->withMany($order, 'orders', 'customer_id')
+            ->withDeletionTimestamp('date_deleted');
 
         return new Mapping($this->db, $customer, [], [
             'inserted' => [$this->hook],
@@ -346,7 +438,8 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
         $customer = (new Definition('customers'))
             ->withColumns('id', 'name')
-            ->withMany($order, 'orders', 'customer_id');
+            ->withMany($order, 'orders', 'customer_id')
+            ->withDeletionTimestamp('date_deleted');
 
         return new Mapping($this->db, $customer);
     }
