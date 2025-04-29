@@ -83,6 +83,20 @@ class Mapping extends Table
     }
 
     /**
+     * Counts all records.
+     *
+     * @return int
+     */
+    public function count(string $column = '*')
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+  
+        return parent::count($column);
+    }
+
+    /**
      * Maps the provided array into the database.
      *
      * @param array $data
