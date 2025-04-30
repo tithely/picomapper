@@ -407,9 +407,9 @@ class Mapping extends Table
     private function delete($ids = [])
     {
         foreach ($ids as $table => $deleteColumns) {
-            foreach ($deleteColumns as $deletion => $primaries) {
+            foreach ($deleteColumns as $deletion => $deletionContext) {
                 // Arrange values into groups based on all but the last key
-                $grouped = Collection::group($primaries, function($keys) {
+                $grouped = Collection::group($deletionContext['keys'], function(array $keys) {
                     array_pop($keys);
                     return implode(':', $keys);
                 });
@@ -453,7 +453,17 @@ class Mapping extends Table
 
                     $query->closeOr();
 
-                    $result = $deletion ? $query->isNull($deletion)->update([$deletion => gmdate('Y-m-d H:i:s')]) : $query->remove();
+                    if ($deletion) {
+                        $result = $query
+                            ->isNull($deletion)
+                            ->update(array_merge(
+                                [$deletion => gmdate('Y-m-d H:i:s')],
+                                $deletionContext['data']
+                            ));
+                    } else {
+                        $result = $query->remove();
+                    }
+
                     if (!$result) {
                         throw new \Exception('Failed to delete records.');
                     }
@@ -468,13 +478,17 @@ class Mapping extends Table
      *
      * @param array $data
      * @param array $list
-     * @return array
+     * @return array<string, array<string, array{
+     *     keys: list<array<string, mixed>>,
+     *     data: array<string, mixed>
+     * }>>
      */
     private function collectPrimary(array $data = [], $list = [])
     {
         $table = $this->definition->getTable();
         $primaryKey = $this->definition->getPrimaryKey();
         $deletion = $this->definition->getDeletionTimestamp();
+        $deletionData = $this->definition->getDeletionData();
 
         $item = [];
 
@@ -482,7 +496,8 @@ class Mapping extends Table
             $item[$column] = $data[$column];
         }
 
-        $list[$table][$deletion][] = $item;
+        $list[$table][$deletion]['keys'][] = $item;
+        $list[$table][$deletion]['data'] = $deletionData;
 
         foreach ($this->definition->getProperties() as $property) {
             $values = $data[$property->getName()] ?? [];
