@@ -42,6 +42,11 @@ class Definition
     /**
      * @var array
      */
+    private $deletionData = [];
+
+    /**
+     * @var array
+     */
     private $creationData = [];
 
     /**
@@ -163,6 +168,18 @@ class Definition
     }
 
     /**
+     * Sets an array of table data to be included when a record is removed.
+     * 
+     * @param array $data
+     * @return Definition
+     */
+    public function withDeletionData(array $data): self
+    {
+        $this->deletionData = $data;
+        return $this;
+    }
+
+    /**
      * Sets an array of table data to be included when a record is inserted.
      *
      * @param array $data
@@ -255,6 +272,16 @@ class Definition
     public function getDeletionTimestamp()
     {
         return $this->deletionTimestamp;
+    }
+
+    /**
+     * Returns an array of table data to be included when a record is removed.
+     *
+     * @return array
+     */
+    public function getDeletionData()
+    {
+        return $this->deletionData;
     }
 
     /**
