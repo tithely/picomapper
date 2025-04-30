@@ -176,6 +176,11 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
         $removed = $this->getMapping()->eq('id', 1)->findOne();
         $this->assertNull($removed);
+
+        $this->assertSame(
+            'Admin',
+            $this->db->table('customers')->eq('id', 1)->findOneColumn('deleted_by')
+        );
     }
 
     public function  testReadOnlyInsert()
@@ -408,7 +413,10 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $customer = (new Definition('customers'))
             ->withColumns('id', 'name')
             ->withMany($order, 'orders', 'customer_id')
-            ->withDeletionTimestamp('date_deleted');
+            ->withDeletionTimestamp('date_deleted')
+            ->withDeletionData([
+                'deleted_by' => 'Admin'
+            ]);
 
         return new Mapping($this->db, $customer, [], [
             'inserted' => [$this->hook],
