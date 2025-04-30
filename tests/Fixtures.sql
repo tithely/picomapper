@@ -1,6 +1,6 @@
 -- Prepare schema
 DROP TABLE IF EXISTS customers;
-CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, date_deleted TEXT);
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, date_deleted TEXT, deleted_by TEXT);
 
 DROP TABLE IF EXISTS orders;
 CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, date_created TEXT, date_deleted TEXT);
