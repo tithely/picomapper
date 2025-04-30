@@ -72,6 +72,15 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
     }
 
+    public function testCount()
+    {
+        $this->assertSame(2, $this->getMapping()->count());
+
+        $this->getMapping()->eq('id', 1)->remove();
+
+        $this->assertSame(1, $this->getMapping()->count());
+    }
+
     public function testInsert()
     {
         $customer = [
