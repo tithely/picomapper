@@ -92,7 +92,7 @@ class Mapping extends Table
         if ($this->definition->getDeletionTimestamp()) {
             $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
         }
-  
+
         return parent::count($column);
     }
 
@@ -124,10 +124,7 @@ class Mapping extends Table
             unset($base[$this->definition->getPrimaryKey()[0]]);
         }
 
-        if (!parent::insert($base)) {
-            // Transaction already cancelled by the statement handler
-            return false;
-        }
+        parent::insert($base);
 
         if ($this->definition->isAutoIncrement()) {
             $this->lastId = $this->db->getLastId();
@@ -154,10 +151,7 @@ class Mapping extends Table
             foreach ($items as $item) {
                 $item[$property->getForeignColumn()] = $data[$property->getLocalColumn()];
 
-                if (!$mapping->insert($item)) {
-                    // Transaction already cancelled by the statement handler
-                    return false;
-                }
+                $mapping->insert($item);
             }
         }
 
@@ -177,6 +171,7 @@ class Mapping extends Table
      *
      * @param array $data
      * @return boolean
+     * @throws \Exception
      */
     public function update(array $data = array())
     {
@@ -188,7 +183,7 @@ class Mapping extends Table
 
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
-                return false;
+                throw new \Exception('Failed to update record. Missing primary key column: ' . $column);
             }
 
             if (is_null($data[$column])) {
@@ -199,7 +194,7 @@ class Mapping extends Table
         }
 
         if (!$original = $this->findOne()) {
-            return false;
+            throw new \Exception('Failed to update record. Original not found.');
         }
 
         $useTransaction = !$this->db->getConnection()->inTransaction();
@@ -222,12 +217,12 @@ class Mapping extends Table
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             if ($useTransaction) {
                 $this->db->cancelTransaction();
             }
 
-            return false;
+            throw $exception;
         }
     }
 
@@ -236,6 +231,7 @@ class Mapping extends Table
      *
      * @param array $data
      * @return bool
+     * @throws \Exception
      */
     public function save(array $data)
     {
@@ -243,7 +239,7 @@ class Mapping extends Table
 
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
-                return false;
+                throw new \Exception('Failed to save record. Missing primary key column: ' . $column);
             }
 
             if (is_null($data[$column])) {
@@ -261,6 +257,7 @@ class Mapping extends Table
      * Removes data matching the condition.
      *
      * @return bool
+     * @throws \Exception
      */
     public function remove()
     {
@@ -271,11 +268,18 @@ class Mapping extends Table
             $ids = $this->collectPrimary($original, $ids);
         }
 
-        try {
+        $useTransaction = !$this->db->getConnection()->inTransaction();
+
+        if ($useTransaction) {
             $this->db->startTransaction();
+        }
+
+        try {
             $this->delete($ids);
 
-            $this->db->closeTransaction();
+            if ($useTransaction) {
+                $this->db->closeTransaction();
+            }
 
             foreach ($data as $item) {
                 $this->dispatch('removed', $item);
@@ -283,8 +287,11 @@ class Mapping extends Table
 
             return true;
         } catch (\Exception $exception) {
-            $this->db->cancelTransaction();
-            return false;
+            if ($useTransaction) {
+                $this->db->cancelTransaction();
+            }
+
+            throw $exception;
         }
     }
 
@@ -331,9 +338,7 @@ class Mapping extends Table
                 $this->definition->getModificationData()
             );
 
-            if (!$query->update($base)) {
-                throw new \Exception('Failed to update record.');
-            }
+            $query->update($base);
         }
 
         foreach ($this->definition->getProperties() as $property) {
@@ -361,9 +366,7 @@ class Mapping extends Table
                     $item[$property->getForeignColumn()] = $data[$property->getLocalColumn()];
                 }
 
-                if (!$mapping->insert($item)) {
-                    throw new \Exception('Failed to insert record.');
-                }
+                $mapping->insert($item);
             }
 
             foreach ($delete as $item) {
@@ -380,7 +383,7 @@ class Mapping extends Table
                     continue;
                 }
 
-                $originalItem = Collection::first($propertyOriginal, function($original) use ($item, $propertyPrimary) {
+                $originalItem = Collection::first($propertyOriginal, function ($original) use ($item, $propertyPrimary) {
                     foreach ($propertyPrimary as $column) {
                         if ($original[$column] != $item[$column]) {
                             return false;
@@ -409,7 +412,7 @@ class Mapping extends Table
         foreach ($ids as $table => $deleteColumns) {
             foreach ($deleteColumns as $deletion => $deletionContext) {
                 // Arrange values into groups based on all but the last key
-                $grouped = Collection::group($deletionContext['keys'], function(array $keys) {
+                $grouped = Collection::group($deletionContext['keys'], function (array $keys) {
                     array_pop($keys);
                     return implode(':', $keys);
                 });
@@ -549,7 +552,7 @@ class Mapping extends Table
             $results = $mapping
                 ->findAll();
 
-            $properties[$property->getName()] = Collection::group($results, function($result) use ($groupColumn) {
+            $properties[$property->getName()] = Collection::group($results, function ($result) use ($groupColumn) {
                 return $result[$groupColumn];
             });
         }
@@ -657,7 +660,7 @@ class Mapping extends Table
     private function requiresPrefix(string $column): bool
     {
         $pattern = '/^[a-zA-Z_][a-zA-Z0-9_]*$/';
-        return (bool) preg_match($pattern, $column);
+        return (bool)preg_match($pattern, $column);
     }
 
     /**
@@ -674,7 +677,8 @@ class Mapping extends Table
      *
      * @return string | array
      */
-    private function prefixTableNameTo($input) {
+    private function prefixTableNameTo($input)
+    {
         $table = $this->definition->getTable();
 
         if (is_string($input)) {
