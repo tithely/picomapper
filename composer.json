@@ -21,6 +21,6 @@
   },
   "scripts": {
     "test": "phpunit",
-    "psalm": "vendor/bin/psalm --config=psalm.xml"
+    "psalm": "vendor/bin/psalm"
   }
 }
