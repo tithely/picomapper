@@ -432,6 +432,43 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($updated['orders'][0]['items'][2]['amount'], 600);
     }
 
+    public function testUpdateThrowsMappingExceptionWhenMissingPrimaryKey()
+    {
+        $this->expectException(MappingException::class);
+        $this->expectExceptionMessage('Failed to update record. Missing primary key column: id');
+
+        $customer = [
+            'name' => 'John Doe',
+        ];
+
+        $this->getMapping()->update($customer);
+    }
+
+    public function testUpdateThrowsMappingExceptionWhenOriginalNotFound()
+    {
+        $this->expectException(MappingException::class);
+        $this->expectExceptionMessage('Failed to update record. Original not found.');
+
+        $customer = [
+            'id' => 999,
+            'name' => 'Nonexistent Customer',
+        ];
+
+        $this->getMapping()->update($customer);
+    }
+
+    public function testSaveThrowsMappingExceptionWhenMissingPrimaryKey()
+    {
+        $this->expectException(MappingException::class);
+        $this->expectExceptionMessage('Failed to save record. Missing primary key column: id');
+
+        $customer = [
+            'name' => 'John Doe',
+        ];
+
+        $this->getMapping()->save($customer);
+    }
+
     public function testPrefixAndRemoveTableName()
     {
         $method = new \ReflectionMethod('PicoMapper\Mapping', 'prefixTableNameTo');

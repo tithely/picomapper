@@ -171,7 +171,7 @@ class Mapping extends Table
      *
      * @param array $data
      * @return boolean
-     * @throws \Exception
+     * @throws MappingException
      */
     public function update(array $data = array())
     {
@@ -183,7 +183,7 @@ class Mapping extends Table
 
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
-                throw new \Exception('Failed to update record. Missing primary key column: ' . $column);
+                throw new MappingException('Failed to update record. Missing primary key column: ' . $column);
             }
 
             if (is_null($data[$column])) {
@@ -194,7 +194,7 @@ class Mapping extends Table
         }
 
         if (!$original = $this->findOne()) {
-            throw new \Exception('Failed to update record. Original not found.');
+            throw new MappingException('Failed to update record. Original not found.');
         }
 
         $useTransaction = !$this->db->getConnection()->inTransaction();
@@ -231,7 +231,7 @@ class Mapping extends Table
      *
      * @param array $data
      * @return bool
-     * @throws \Exception
+     * @throws MappingException
      */
     public function save(array $data)
     {
@@ -239,7 +239,7 @@ class Mapping extends Table
 
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
-                throw new \Exception('Failed to save record. Missing primary key column: ' . $column);
+                throw new MappingException('Failed to save record. Missing primary key column: ' . $column);
             }
 
             if (is_null($data[$column])) {
@@ -257,7 +257,7 @@ class Mapping extends Table
      * Removes data matching the condition.
      *
      * @return bool
-     * @throws \Exception
+     * @throws MappingException
      */
     public function remove()
     {
@@ -303,7 +303,7 @@ class Mapping extends Table
      * @param array $original
      * @param array $deleteIds
      * @return array
-     * @throws \Exception
+     * @throws MappingException
      */
     private function replace(array $data, array $original, array $deleteIds = [])
     {
@@ -405,7 +405,7 @@ class Mapping extends Table
      * mapping tables to primary key values.
      *
      * @param array $ids
-     * @throws \Exception
+     * @throws MappingException
      */
     private function delete($ids = [])
     {
@@ -468,7 +468,7 @@ class Mapping extends Table
                     }
 
                     if (!$result) {
-                        throw new \Exception('Failed to delete records.');
+                        throw new MappingException('Failed to delete records.');
                     }
                 }
             }
