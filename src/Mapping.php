@@ -83,6 +83,20 @@ class Mapping extends Table
     }
 
     /**
+     * Checks if any records exist matching the current conditions.
+     *
+     * @return bool
+     */
+    public function exists()
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::exists();
+    }
+
+    /**
      * Counts all records.
      *
      * @return int
@@ -249,8 +263,7 @@ class Mapping extends Table
             }
         }
 
-        $original = $this->findOne();
-        return $original ? $this->update($data) : $this->insert($data);
+        return $this->exists() ? $this->update($data) : $this->insert($data);
     }
 
     /**

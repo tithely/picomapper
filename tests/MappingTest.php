@@ -192,6 +192,19 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    public function testExists()
+    {
+        $this->assertTrue($this->getMapping()->eq('id', 1)->exists());
+        $this->assertFalse($this->getMapping()->eq('id', 999)->exists());
+    }
+
+    public function testExistsReturnsFalseForSoftDeletedRecord()
+    {
+        $this->getMapping()->eq('id', 1)->remove();
+
+        $this->assertFalse($this->getMapping()->eq('id', 1)->exists());
+    }
+
     public function testReadOnlyInsert()
     {
         $customer = [
