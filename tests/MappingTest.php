@@ -192,6 +192,42 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    public function testFindAllByColumnExcludesSoftDeletedRecords()
+    {
+        $this->getMapping()->eq('id', 1)->remove();
+
+        $names = $this->getMapping()->findAllByColumn('name');
+
+        $this->assertCount(1, $names);
+        $this->assertNotContains('John Doe', $names);
+        $this->assertContains('Jane Doe', $names);
+    }
+
+    public function testFindOneColumnExcludesSoftDeletedRecords()
+    {
+        $this->getMapping()->eq('id', 1)->remove();
+
+        $name = $this->getMapping()->eq('id', 1)->findOneColumn('name');
+
+        $this->assertFalse($name);
+    }
+
+    public function testSumExcludesSoftDeletedRecords()
+    {
+        $this->db->execute('CREATE TABLE scores (id INTEGER PRIMARY KEY, customer_id INTEGER, points INTEGER, date_deleted TEXT)');
+        $this->db->execute('INSERT INTO scores (id, customer_id, points) VALUES (1, 1, 100), (2, 2, 200)');
+
+        $score = (new Definition('scores'))
+            ->withColumns('id', 'customer_id', 'points')
+            ->withDeletionTimestamp('date_deleted');
+
+        $this->assertSame(300.0, (new Mapping($this->db, $score))->sum('points'));
+
+        (new Mapping($this->db, $score))->eq('id', 1)->remove();
+        
+        $this->assertSame(200.0, (new Mapping($this->db, $score))->sum('points'));
+    }
+
     public function testReadOnlyInsert()
     {
         $customer = [

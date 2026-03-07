@@ -97,6 +97,51 @@ class Mapping extends Table
     }
 
     /**
+     * Fetches all values for a single column.
+     *
+     * @param string $column
+     * @return array
+     */
+    public function findAllByColumn($column)
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::findAllByColumn($column);
+    }
+
+    /**
+     * Fetches a single column value from the first matching row.
+     *
+     * @param string $column
+     * @return mixed
+     */
+    public function findOneColumn($column)
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::findOneColumn($column);
+    }
+
+    /**
+     * Sums a column across all matching rows.
+     *
+     * @param string $column
+     * @return float
+     */
+    public function sum(string $column)
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::sum($column);
+    }
+
+    /**
      * Maps the provided array into the database.
      *
      * @param array $data
