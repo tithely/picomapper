@@ -560,6 +560,51 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
     }
 
+    public function testFindAllWithOneByJoin()
+    {
+        $orders = $this->getWithOneByJoinMapping()->findAll();
+
+        $this->assertCount(3, $orders);
+
+        $this->assertEquals('Alice', $orders[0]['employee']['name']);
+        $this->assertEquals('Bob', $orders[1]['employee']['name']);
+        $this->assertNull($orders[2]['employee']);
+    }
+
+    public function testFindOneWithOneByJoin()
+    {
+        $order = $this->getWithOneByJoinMapping()->eq('id', 2)->findOne();
+
+        $this->assertNotNull($order);
+        $this->assertEquals(2, $order['id']);
+        $this->assertEquals('Bob', $order['employee']['name']);
+    }
+
+    public function testFindAllWithManyByJoin()
+    {
+        $employees = $this->getWithManyByJoinMapping()->findAll();
+
+        $this->assertCount(2, $employees);
+
+        $this->assertEquals('Alice', $employees[0]['name']);
+        $this->assertCount(1, $employees[0]['orders']);
+        $this->assertEquals('2018-01-01', $employees[0]['orders'][0]['date_created']);
+
+        $this->assertEquals('Bob', $employees[1]['name']);
+        $this->assertCount(1, $employees[1]['orders']);
+        $this->assertEquals('2018-01-02', $employees[1]['orders'][0]['date_created']);
+    }
+
+    public function testFindOneWithManyByJoin()
+    {
+        $employee = $this->getWithManyByJoinMapping()->eq('id', 1)->findOne();
+
+        $this->assertNotNull($employee);
+        $this->assertEquals('Alice', $employee['name']);
+        $this->assertCount(1, $employee['orders']);
+        $this->assertEquals('2018-01-01', $employee['orders'][0]['date_created']);
+    }
+
     /**
      * Returns a new mapping for testing.
      *
@@ -597,6 +642,40 @@ class MappingTest extends \PHPUnit\Framework\TestCase
             'updated' => [$this->hook],
             'removed' => [$this->hook]
         ]);
+    }
+
+    /**
+     * Returns a mapping using withOneByJoin for testing.
+     *
+     * @return Mapping
+     */
+    public function getWithOneByJoinMapping()
+    {
+        $employee = (new Definition('employees'))
+            ->withColumns('id', 'name');
+
+        $order = (new Definition('orders'))
+            ->withColumns('id', 'date_created')
+            ->withOneByJoin($employee, 'employee', 'id', 'id', 'orders_fulfillments', 'employee_id', 'order_id');
+
+        return new Mapping($this->db, $order);
+    }
+
+    /**
+     * Returns a mapping using withManyByJoin for testing.
+     *
+     * @return Mapping
+     */
+    public function getWithManyByJoinMapping()
+    {
+        $order = (new Definition('orders'))
+            ->withColumns('id', 'date_created');
+
+        $employee = (new Definition('employees'))
+            ->withColumns('id', 'name')
+            ->withManyByJoin($order, 'orders', 'id', 'id', 'orders_fulfillments', 'order_id', 'employee_id');
+
+        return new Mapping($this->db, $employee);
     }
 
     /**

@@ -135,6 +135,27 @@ class Definition
     }
 
     /**
+     * Adds a one-to-one relationship through a joined table.
+     *
+     * @param Definition $definition
+     * @param string $name
+     * @param string $foreignColumn
+     * @param string $localColumn
+     * @param string $joinTable
+     * @param string $joinForeignColumn
+     * @param string $joinLocalColumn
+     * @return Definition
+     */
+    public function withOneByJoin(Definition $definition, string $name, string $foreignColumn, string $localColumn, string $joinTable, string $joinForeignColumn, string $joinLocalColumn)
+    {
+        $property = new Property($name, false, $definition, $localColumn, $foreignColumn);
+        $property->join($joinTable, $joinLocalColumn, $joinForeignColumn);
+
+        $this->properties[] = $property;
+        return $this;
+    }
+
+    /**
      * Adds a one-to-many relationship through a joined table.
      *
      * @param Definition $definition

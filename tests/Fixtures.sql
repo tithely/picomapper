@@ -14,6 +14,9 @@ CREATE TABLE discounts (id INTEGER PRIMARY KEY, order_id INTEGER, description TE
 DROP TABLE IF EXISTS orders_fulfillments;
 CREATE TABLE orders_fulfillments (order_id INTEGER, employee_id INTEGER);
 
+DROP TABLE IF EXISTS employees;
+CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT);
+
 -- Seed database
 INSERT INTO customers (id, name) VALUES
 (1, 'John Doe'),
@@ -34,3 +37,11 @@ INSERT INTO items (id, order_id, description, amount) VALUES
 
 INSERT INTO discounts (id, order_id, description, amount) VALUES
 (1, 2, '$10', 10);
+
+INSERT INTO employees (id, name) VALUES
+(1, 'Alice'),
+(2, 'Bob');
+
+INSERT INTO orders_fulfillments (order_id, employee_id) VALUES
+(1, 1),
+(2, 2);
