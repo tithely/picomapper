@@ -321,6 +321,22 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->getMapping()->insert($customer);
     }
 
+    public function testInsertDuplicateOfSoftDeletedRecordThrowsException()
+    {
+        $this->expectException(SQLException::class);
+        $this->expectExceptionMessage('UNIQUE constraint failed');
+
+        $this->getMapping()->eq('id', 1)->remove();
+
+        $customer = [
+            'id' => 1,
+            'name' => 'Dave Matthews',
+            'orders' => []
+        ];
+
+        $this->getMapping()->insert($customer);
+    }
+
     public function testInsertDuplicateChildrenThrowsException()
     {
         $this->expectException(SQLException::class);
