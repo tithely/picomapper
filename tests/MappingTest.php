@@ -560,6 +560,75 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
     }
 
+    public function testFindAllWithDuplicateLocalColumnValues()
+    {
+        $this->db->execute('CREATE TABLE categories (id INTEGER PRIMARY KEY, label TEXT)');
+        $this->db->execute('CREATE TABLE products (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT)');
+        $this->db->execute("INSERT INTO categories (id, label) VALUES (1, 'Electronics')");
+        $this->db->execute("INSERT INTO products (id, category_id, name) VALUES (1, 1, 'Phone'), (2, 1, 'Laptop'), (3, NULL, 'Unknown')");
+
+        $category = (new Definition('categories'))->withColumns('id', 'label');
+        $product = (new Definition('products'))
+            ->withColumns('id', 'category_id', 'name')
+            ->withOne($category, 'category', 'id', 'category_id');
+
+        $mapping = new Mapping($this->db, $product);
+        $products = $mapping->findAll();
+
+        $this->assertCount(3, $products);
+        $this->assertEquals('Electronics', $products[0]['category']['label']);
+        $this->assertEquals('Electronics', $products[1]['category']['label']);
+        $this->assertNull($products[2]['category']);
+    }
+
+    public function testFindAllWithManyAndNullableLocalColumn()
+    {
+        $this->db->execute('CREATE TABLE sections (id INTEGER PRIMARY KEY, name TEXT)');
+        $this->db->execute('CREATE TABLE articles (id INTEGER PRIMARY KEY, section_id INTEGER, title TEXT)');
+        $this->db->execute('CREATE TABLE tags (id INTEGER PRIMARY KEY, section_id INTEGER, label TEXT)');
+        $this->db->execute("INSERT INTO sections (id, name) VALUES (1, 'Tech')");
+        $this->db->execute("INSERT INTO articles (id, section_id, title) VALUES (1, 1, 'PHP 8.5'), (2, NULL, 'Unclassified')");
+        $this->db->execute("INSERT INTO tags (id, section_id, label) VALUES (1, 1, 'php'), (2, 1, 'programming')");
+
+        $tag = (new Definition('tags'))->withColumns('id', 'section_id', 'label');
+        $article = (new Definition('articles'))
+            ->withColumns('id', 'section_id', 'title')
+            ->withMany($tag, 'tags', 'section_id', 'section_id');
+
+        $mapping = new Mapping($this->db, $article);
+        $articles = $mapping->findAll();
+
+        $this->assertCount(2, $articles);
+        $this->assertCount(2, $articles[0]['tags']);
+        $this->assertEquals('php', $articles[0]['tags'][0]['label']);
+        $this->assertEquals('programming', $articles[0]['tags'][1]['label']);
+        $this->assertCount(0, $articles[1]['tags']);
+    }
+
+    public function testFindAllWithNullableLocalColumn()
+    {
+        $this->db->execute('CREATE TABLE categories (id INTEGER PRIMARY KEY, label TEXT)');
+        $this->db->execute('CREATE TABLE products (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT)');
+        $this->db->execute("INSERT INTO categories (id, label) VALUES (1, 'Electronics')");
+        $this->db->execute("INSERT INTO products (id, category_id, name) VALUES (1, 1, 'Phone'), (2, NULL, 'Unknown')");
+
+        $category = (new Definition('categories'))->withColumns('id', 'label');
+        $product = (new Definition('products'))
+            ->withColumns('id', 'category_id', 'name')
+            ->withOne($category, 'category', 'id', 'category_id');
+
+        $mapping = new Mapping($this->db, $product);
+        $products = $mapping->findAll();
+
+        $this->assertCount(2, $products);
+
+        $this->assertEquals('Phone', $products[0]['name']);
+        $this->assertEquals('Electronics', $products[0]['category']['label']);
+
+        $this->assertEquals('Unknown', $products[1]['name']);
+        $this->assertNull($products[1]['category']);
+    }
+
     public function testFindAllWithOneByJoin()
     {
         $orders = $this->getWithOneByJoinMapping()->findAll();

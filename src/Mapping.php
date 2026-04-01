@@ -538,30 +538,30 @@ class Mapping extends Table
         foreach ($this->definition->getProperties() as $property) {
             $mapping = new static($this->db, $property->getDefinition(), [$property->getForeignColumn()]);
 
+            $localValues = array_unique(array_filter(array_column($data, $property->getLocalColumn()), fn($v) => $v !== null));
+
             if ($property->getJoinTable()) {
                 $mapping->columns[] = sprintf('%s.%s', $property->getJoinTable(), $property->getJoinForeignColumn());
                 $mapping
                     ->join($property->getJoinTable(), $property->getJoinLocalColumn(), $property->getForeignColumn())
-                    ->in(sprintf('%s.%s', $property->getJoinTable(), $property->getJoinForeignColumn()), array_column($data, $property->getLocalColumn()));
+                    ->in(sprintf('%s.%s', $property->getJoinTable(), $property->getJoinForeignColumn()), $localValues);
                 $groupColumn = $property->getJoinForeignColumn();
             } else {
-                $mapping->in($property->getForeignColumn(), array_column($data, $property->getLocalColumn()));
+                $mapping->in($property->getForeignColumn(), $localValues);
                 $groupColumn = $property->getForeignColumn();
             }
 
             $results = $mapping
                 ->findAll();
 
-            $properties[$property->getName()] = Collection::group($results, function ($result) use ($groupColumn) {
-                return $result[$groupColumn];
-            });
+            $properties[$property->getName()] = array_map(fn($group) => array_values($group), Collection::group($results, fn ($result) => $result[$groupColumn]));
         }
 
         $mapped = [];
         foreach ($data as $item) {
             foreach ($this->definition->getProperties() as $property) {
-                $value = $properties[$property->getName()][$item[$property->getLocalColumn()]] ?? [];
-                $value = array_values($value);
+                $localValue = $item[$property->getLocalColumn()];
+                $value = $localValue !== null ? ($properties[$property->getName()][$localValue] ?? []) : [];
 
                 if (!$property->isCollection()) {
                     $value = array_shift($value);
