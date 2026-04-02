@@ -205,6 +205,42 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($this->getMapping()->eq('id', 1)->exists());
     }
 
+    public function testFindAllByColumnExcludesSoftDeletedRecords()
+    {
+        $this->getMapping()->eq('id', 1)->remove();
+
+        $names = $this->getMapping()->findAllByColumn('name');
+
+        $this->assertCount(1, $names);
+        $this->assertNotContains('John Doe', $names);
+        $this->assertContains('Jane Doe', $names);
+    }
+
+    public function testFindOneColumnExcludesSoftDeletedRecords()
+    {
+        $this->getMapping()->eq('id', 1)->remove();
+
+        $name = $this->getMapping()->eq('id', 1)->findOneColumn('name');
+
+        $this->assertFalse($name);
+    }
+
+    public function testSumExcludesSoftDeletedRecords()
+    {
+        $this->db->execute('CREATE TABLE scores (id INTEGER PRIMARY KEY, customer_id INTEGER, points INTEGER, date_deleted TEXT)');
+        $this->db->execute('INSERT INTO scores (id, customer_id, points) VALUES (1, 1, 100), (2, 2, 200)');
+
+        $score = (new Definition('scores'))
+            ->withColumns('id', 'customer_id', 'points')
+            ->withDeletionTimestamp('date_deleted');
+
+        $this->assertSame(300.0, (new Mapping($this->db, $score))->sum('points'));
+
+        (new Mapping($this->db, $score))->eq('id', 1)->remove();
+        
+        $this->assertSame(200.0, (new Mapping($this->db, $score))->sum('points'));
+    }
+
     public function testReadOnlyInsert()
     {
         $customer = [
@@ -589,6 +625,120 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
     }
 
+    public function testFindAllWithDuplicateLocalColumnValues()
+    {
+        $this->db->execute('CREATE TABLE categories (id INTEGER PRIMARY KEY, label TEXT)');
+        $this->db->execute('CREATE TABLE products (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT)');
+        $this->db->execute("INSERT INTO categories (id, label) VALUES (1, 'Electronics')");
+        $this->db->execute("INSERT INTO products (id, category_id, name) VALUES (1, 1, 'Phone'), (2, 1, 'Laptop'), (3, NULL, 'Unknown')");
+
+        $category = (new Definition('categories'))->withColumns('id', 'label');
+        $product = (new Definition('products'))
+            ->withColumns('id', 'category_id', 'name')
+            ->withOne($category, 'category', 'id', 'category_id');
+
+        $mapping = new Mapping($this->db, $product);
+        $products = $mapping->findAll();
+
+        $this->assertCount(3, $products);
+        $this->assertEquals('Electronics', $products[0]['category']['label']);
+        $this->assertEquals('Electronics', $products[1]['category']['label']);
+        $this->assertNull($products[2]['category']);
+    }
+
+    public function testFindAllWithManyAndNullableLocalColumn()
+    {
+        $this->db->execute('CREATE TABLE sections (id INTEGER PRIMARY KEY, name TEXT)');
+        $this->db->execute('CREATE TABLE articles (id INTEGER PRIMARY KEY, section_id INTEGER, title TEXT)');
+        $this->db->execute('CREATE TABLE tags (id INTEGER PRIMARY KEY, section_id INTEGER, label TEXT)');
+        $this->db->execute("INSERT INTO sections (id, name) VALUES (1, 'Tech')");
+        $this->db->execute("INSERT INTO articles (id, section_id, title) VALUES (1, 1, 'PHP 8.5'), (2, NULL, 'Unclassified')");
+        $this->db->execute("INSERT INTO tags (id, section_id, label) VALUES (1, 1, 'php'), (2, 1, 'programming')");
+
+        $tag = (new Definition('tags'))->withColumns('id', 'section_id', 'label');
+        $article = (new Definition('articles'))
+            ->withColumns('id', 'section_id', 'title')
+            ->withMany($tag, 'tags', 'section_id', 'section_id');
+
+        $mapping = new Mapping($this->db, $article);
+        $articles = $mapping->findAll();
+
+        $this->assertCount(2, $articles);
+        $this->assertCount(2, $articles[0]['tags']);
+        $this->assertEquals('php', $articles[0]['tags'][0]['label']);
+        $this->assertEquals('programming', $articles[0]['tags'][1]['label']);
+        $this->assertCount(0, $articles[1]['tags']);
+    }
+
+    public function testFindAllWithNullableLocalColumn()
+    {
+        $this->db->execute('CREATE TABLE categories (id INTEGER PRIMARY KEY, label TEXT)');
+        $this->db->execute('CREATE TABLE products (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT)');
+        $this->db->execute("INSERT INTO categories (id, label) VALUES (1, 'Electronics')");
+        $this->db->execute("INSERT INTO products (id, category_id, name) VALUES (1, 1, 'Phone'), (2, NULL, 'Unknown')");
+
+        $category = (new Definition('categories'))->withColumns('id', 'label');
+        $product = (new Definition('products'))
+            ->withColumns('id', 'category_id', 'name')
+            ->withOne($category, 'category', 'id', 'category_id');
+
+        $mapping = new Mapping($this->db, $product);
+        $products = $mapping->findAll();
+
+        $this->assertCount(2, $products);
+
+        $this->assertEquals('Phone', $products[0]['name']);
+        $this->assertEquals('Electronics', $products[0]['category']['label']);
+
+        $this->assertEquals('Unknown', $products[1]['name']);
+        $this->assertNull($products[1]['category']);
+    }
+
+    public function testFindAllWithOneByJoin()
+    {
+        $orders = $this->getWithOneByJoinMapping()->findAll();
+
+        $this->assertCount(3, $orders);
+
+        $this->assertEquals('Alice', $orders[0]['employee']['name']);
+        $this->assertEquals('Bob', $orders[1]['employee']['name']);
+        $this->assertNull($orders[2]['employee']);
+    }
+
+    public function testFindOneWithOneByJoin()
+    {
+        $order = $this->getWithOneByJoinMapping()->eq('id', 2)->findOne();
+
+        $this->assertNotNull($order);
+        $this->assertEquals(2, $order['id']);
+        $this->assertEquals('Bob', $order['employee']['name']);
+    }
+
+    public function testFindAllWithManyByJoin()
+    {
+        $employees = $this->getWithManyByJoinMapping()->findAll();
+
+        $this->assertCount(2, $employees);
+
+        $this->assertEquals('Alice', $employees[0]['name']);
+        $this->assertCount(1, $employees[0]['orders']);
+        $this->assertEquals('2018-01-01', $employees[0]['orders'][0]['date_created']);
+
+        $this->assertEquals('Bob', $employees[1]['name']);
+        $this->assertCount(1, $employees[1]['orders']);
+        $this->assertEquals('2018-01-02', $employees[1]['orders'][0]['date_created']);
+    }
+
+    public function testFindOneWithManyByJoin()
+    {
+        $employee = $this->getWithManyByJoinMapping()->eq('id', 1)->findOne();
+
+        $this->assertNotNull($employee);
+        $this->assertEquals('Alice', $employee['name']);
+        $this->assertCount(1, $employee['orders']);
+        $this->assertEquals('2018-01-01', $employee['orders'][0]['date_created']);
+    }
+
     /**
      * Returns a new mapping for testing.
      *
@@ -626,6 +776,40 @@ class MappingTest extends \PHPUnit\Framework\TestCase
             'updated' => [$this->hook],
             'removed' => [$this->hook]
         ]);
+    }
+
+    /**
+     * Returns a mapping using withOneByJoin for testing.
+     *
+     * @return Mapping
+     */
+    public function getWithOneByJoinMapping()
+    {
+        $employee = (new Definition('employees'))
+            ->withColumns('id', 'name');
+
+        $order = (new Definition('orders'))
+            ->withColumns('id', 'date_created')
+            ->withOneByJoin($employee, 'employee', 'id', 'id', 'orders_fulfillments', 'employee_id', 'order_id');
+
+        return new Mapping($this->db, $order);
+    }
+
+    /**
+     * Returns a mapping using withManyByJoin for testing.
+     *
+     * @return Mapping
+     */
+    public function getWithManyByJoinMapping()
+    {
+        $order = (new Definition('orders'))
+            ->withColumns('id', 'date_created');
+
+        $employee = (new Definition('employees'))
+            ->withColumns('id', 'name')
+            ->withManyByJoin($order, 'orders', 'id', 'id', 'orders_fulfillments', 'order_id', 'employee_id');
+
+        return new Mapping($this->db, $employee);
     }
 
     /**

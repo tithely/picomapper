@@ -2,6 +2,7 @@
 
 namespace PicoMapper;
 
+use Override;
 use PicoDb\Database;
 use PicoDb\Table;
 
@@ -108,6 +109,54 @@ class Mapping extends Table
         }
 
         return parent::count($column);
+    }
+
+    /**
+     * Fetches all values for a single column.
+     *
+     * @param string $column
+     * @return mixed
+     */
+    #[Override]
+    public function findAllByColumn($column)
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::findAllByColumn($column);
+    }
+
+    /**
+     * Fetches a single column value from the first matching row.
+     *
+     * @param string $column
+     * @return string|bool
+     */
+    #[Override]
+    public function findOneColumn($column)
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::findOneColumn($column);
+    }
+
+    /**
+     * Sums a column across all matching rows.
+     *
+     * @param string $column
+     * @return float
+     */
+    #[Override]
+    public function sum(string $column)
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::sum($column);
     }
 
     /**
@@ -551,30 +600,30 @@ class Mapping extends Table
         foreach ($this->definition->getProperties() as $property) {
             $mapping = new static($this->db, $property->getDefinition(), [$property->getForeignColumn()]);
 
+            $localValues = array_unique(array_filter(array_column($data, $property->getLocalColumn()), fn($v) => $v !== null));
+
             if ($property->getJoinTable()) {
                 $mapping->columns[] = sprintf('%s.%s', $property->getJoinTable(), $property->getJoinForeignColumn());
                 $mapping
                     ->join($property->getJoinTable(), $property->getJoinLocalColumn(), $property->getForeignColumn())
-                    ->in(sprintf('%s.%s', $property->getJoinTable(), $property->getJoinForeignColumn()), array_column($data, $property->getLocalColumn()));
+                    ->in(sprintf('%s.%s', $property->getJoinTable(), $property->getJoinForeignColumn()), $localValues);
                 $groupColumn = $property->getJoinForeignColumn();
             } else {
-                $mapping->in($property->getForeignColumn(), array_column($data, $property->getLocalColumn()));
+                $mapping->in($property->getForeignColumn(), $localValues);
                 $groupColumn = $property->getForeignColumn();
             }
 
             $results = $mapping
                 ->findAll();
 
-            $properties[$property->getName()] = Collection::group($results, function ($result) use ($groupColumn) {
-                return $result[$groupColumn];
-            });
+            $properties[$property->getName()] = array_map(fn($group) => array_values($group), Collection::group($results, fn ($result) => $result[$groupColumn]));
         }
 
         $mapped = [];
         foreach ($data as $item) {
             foreach ($this->definition->getProperties() as $property) {
-                $value = $properties[$property->getName()][$item[$property->getLocalColumn()]] ?? [];
-                $value = array_values($value);
+                $localValue = $item[$property->getLocalColumn()];
+                $value = $localValue !== null ? ($properties[$property->getName()][$localValue] ?? []) : [];
 
                 if (!$property->isCollection()) {
                     $value = array_shift($value);
