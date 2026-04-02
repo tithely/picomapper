@@ -2,6 +2,7 @@
 
 namespace PicoMapper;
 
+use Override;
 use PicoDb\Database;
 use PicoDb\Table;
 
@@ -94,6 +95,54 @@ class Mapping extends Table
         }
 
         return parent::count($column);
+    }
+
+    /**
+     * Fetches all values for a single column.
+     *
+     * @param string $column
+     * @return mixed
+     */
+    #[Override]
+    public function findAllByColumn($column)
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::findAllByColumn($column);
+    }
+
+    /**
+     * Fetches a single column value from the first matching row.
+     *
+     * @param string $column
+     * @return string|bool
+     */
+    #[Override]
+    public function findOneColumn($column)
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::findOneColumn($column);
+    }
+
+    /**
+     * Sums a column across all matching rows.
+     *
+     * @param string $column
+     * @return float
+     */
+    #[Override]
+    public function sum(string $column)
+    {
+        if ($this->definition->getDeletionTimestamp()) {
+            $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
+        }
+
+        return parent::sum($column);
     }
 
     /**
