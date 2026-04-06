@@ -192,6 +192,19 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    public function testExists()
+    {
+        $this->assertTrue($this->getMapping()->eq('id', 1)->exists());
+        $this->assertFalse($this->getMapping()->eq('id', 999)->exists());
+    }
+
+    public function testExistsReturnsFalseForSoftDeletedRecord()
+    {
+        $this->getMapping()->eq('id', 1)->remove();
+
+        $this->assertFalse($this->getMapping()->eq('id', 1)->exists());
+    }
+
     public function testFindAllByColumnExcludesSoftDeletedRecords()
     {
         $this->getMapping()->eq('id', 1)->remove();
@@ -334,6 +347,22 @@ class MappingTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(SQLException::class);
         $this->expectExceptionMessage('UNIQUE constraint failed');
+
+        $customer = [
+            'id' => 1,
+            'name' => 'Dave Matthews',
+            'orders' => []
+        ];
+
+        $this->getMapping()->insert($customer);
+    }
+
+    public function testInsertDuplicateOfSoftDeletedRecordThrowsException()
+    {
+        $this->expectException(SQLException::class);
+        $this->expectExceptionMessage('UNIQUE constraint failed');
+
+        $this->getMapping()->eq('id', 1)->remove();
 
         $customer = [
             'id' => 1,
